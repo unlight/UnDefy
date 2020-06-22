@@ -1,0 +1,3 @@
+class zShockRiflePickup extends ShockRiflePickup;
+
+defaultproperties{}

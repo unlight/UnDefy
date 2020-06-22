@@ -1,0 +1,56 @@
+class VoteMessage extends zLocalMessage;
+
+#EXEC OBJ LOAD FILE=GeneralAmbience.uax
+
+static function color GetColor(optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2){
+	if(N ==	-1) return MakeColor(250, 240, 240);
+	if(N ==	-2) return MakeColor(250, 240, 240); // -2 - progress votes
+	if(N == -3) return MakeColor(10, 240, 10); // vote passed
+	if(N == -4) return MakeColor(250, 1, 1); // vote failed
+	if(N == 1) return MakeColor(140, 140, 140); // what a vote?
+}
+
+static function string GetString(optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(N == -1 && R1 != None) return R1.PlayerName @ "has called a vote!";
+	if(N == -2) return GetStringVoted(N, zVoting(O) );
+	if(N == -3) return "Vote Passed!";
+	if(N == -4) return "Vote Failed!";
+	if(N == 1) return zVoting(O).VotedString;
+}
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(N == -1 && R1 != None && R2 != None){ // R2 != None (Dummy)
+		//P.ClientPlaySound(sound'GeneralAmbience.texture15');
+		P.ClientPlaySound(sound'GeneralAmbience.beep5');
+	}
+	Super.ClientReceive(P, N, R1, R2, O);
+}
+
+// abstained - воздержались
+static function string GetStringVoted(int N, zVoting V){
+	local string Pattern;
+	local byte i;
+	Pattern = "Voted Yes (%V1/%V3) [%V4] Voted No (%V0/%V2)";
+	for(i = 0; i < 4; i++) Pattern = Repl(Pattern, "%V"$i, V.Voted[i]);
+	Pattern = Repl(Pattern, "%V4", V.VotingTime);
+	return Pattern;
+}
+
+static final function bool IsTrue(byte i, array<byte> Mask){
+	if(i < Mask.Length && bool(Mask[i])) return True;
+	return False;
+}
+
+static function float GetLifeTime(int N){
+	if(N == -3 || N == -4) return 1.3;
+	return 2.3;
+}
+
+defaultproperties{
+	bFadeMessage=True
+	bIsSpecial=True
+	bIsUnique=False
+	bIsPartiallyUnique=True
+	PosY=0.29
+	StackMode=SM_Down
+}

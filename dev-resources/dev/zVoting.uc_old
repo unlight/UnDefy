@@ -1,0 +1,294 @@
+class zVoting extends ReplicationInfo;
+// beta
+// callvote map grendel
+// callvote mutespecs 1
+var array<string> Maps, Params, VotedStringArray;
+var PlayerReplicationInfo Caller;
+var float LastCallTime;
+var byte Voted[4];
+var string VotedString;
+var string TravelURL[5]; // 0 - map, 1 - game 2 - mutators, 3 - options
+var int VotingTime;
+var byte VotingPassPercent;
+var bool bVoteTypeBroadcasted;
+var byte VotingState; // 1-passed 2-failed 255-clear(ended time) 0-progress
+var bool bMapFound;
+var bool bModeFound;
+enum EVoteParamType{
+	VT_Boolean,
+	VT_Int,
+	VT_String,
+	VT_Instant
+};
+struct VoteParam{
+	var string Parameter;
+	var EVoteParamType Type;
+};
+var array<VoteParam> VoteParameters;
+
+var bool bInstantVote;
+
+replication{
+	reliable if(bNetDirty && Role == Role_Authority) VotedString, Voted, VotingTime;
+}
+
+// callvote WarmUpSeconds 0 AllowBrightSkins 1
+function PostBeginPlay(){
+	Level.Game.LoadMapList("DM", Maps);
+}
+
+function Mutation(string MutateString, PlayerController PC){
+	local string S;
+	S = Mid(MutateString, 11);
+	switch( Left(MutateString, 10) ){
+		case "votingcall": CallNewVote(S, PC); break;
+		case "votingcast": CastVote(S, PC); break;
+	}
+}
+
+function CastVote(coerce int Index, PlayerController PC){
+	local float F;
+	local int N;
+	local zLinkedReplicationInfo LRI;
+	LRI = class'zLinkedReplicationInfo'.static.Get(PC.PlayerReplicationInfo);
+	switch(True){
+		case !IsInState('VoteInProgress'): N = 11;
+		case LRI.bVoted: N = 14; // !!!
+		case N != 0: PC.ReceiveLocalizedMessage(class'UnallowedMessage', N); return;
+	}
+	Voted[Index]++;
+	Voted[Index+2]--;
+	LRI.bVoted = True;
+	F = 100.0 / NumPlayers();
+	if(Voted[1] * F >= VotingPassPercent) VotingState = 1; // passed
+	else if(Voted[0] * F >= VotingPassPercent) VotingState = 2; // failed
+	else return;
+	if(VotingState == 1) Level.ServerTravel(GetTravelURL(), False);
+	GotoState('');
+}
+
+function string GetTravelURL(){
+	local byte i;
+	local string S;
+	for(i = 0; i < ArrayCount(TravelURL); i++) S $= TravelURL[i];
+	return S;
+}
+
+state VoteInProgress{
+	function BeginState(){
+		VotingTime = zMain(Owner).VotingTime;
+		VotingPassPercent = zMain(Owner).VotingPassPercent;
+		Voted[2] = Ceil(VotingPassPercent * NumPlayers() / 100.0);
+		Voted[3] = Voted[2];
+		CastVote(1, PlayerController(Caller.Owner));
+		BroadcastLocalizedMessage(class'VoteMessageCaller', VotingTime, Caller);
+		SetTimer(1, True);
+		RemoteRole = ROLE_SimulatedProxy;
+		NetUpdateTime = Level.TimeSeconds - 1;
+	}
+
+	function EndState(){
+		local Controller C;
+		for(C = Level.ControllerList; C != None; C = C.NextController){
+			if(PlayerController(C) != None){
+				PlayerController(C).ReceiveLocalizedMessage(class'VoteMessageCaller', -1, Caller);
+				PlayerController(C).ReceiveLocalizedMessage(class'VoteMessageType', -1,,, Self);
+				PlayerController(C).ReceiveLocalizedMessage(class'VoteMessageVotingProgress', VotingState);
+			}
+		}		
+		Disable('Timer');
+		RemoteRole = ROLE_None;
+		NetUpdateTime = Level.TimeSeconds - 1;
+		LastCallTime = Level.TimeSeconds;
+		ResetVote();
+	}
+
+	function Timer(){
+		local Controller C;
+		for(C = Level.ControllerList; C != None; C = C.NextController){
+			if(PlayerController(C) != None)
+				PlayerController(C).ReceiveLocalizedMessage(class'VoteMessageVotingProgress',,,, Self);
+		}
+		if(!bVoteTypeBroadcasted){
+			BroadcastLocalizedMessage(class'VoteMessageType', VotingTime,,, Self);
+			bVoteTypeBroadcasted = True;			
+		}
+		if(--VotingTime < 0){
+			VotingState = 2;
+			GotoState('');
+		}
+	}
+}
+
+function ResetVote(){
+	local byte i;
+	local zLinkedReplicationInfo Linked;
+//	Caller = None;
+	Voted[0] = 0;
+	Voted[1] = 0;
+	bVoteTypeBroadcasted = False;
+	VotedString = "";
+	for(i = 0; i < ArrayCount(TravelURL); i++) TravelURL[i] = "";
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		Linked = class'zLinkedReplicationInfo'.static.Get(Level.GRI.PRIArray[i]);
+		if(Linked != None) Linked.bVoted = False;
+	}
+	VotedStringArray.Remove(0, VotedStringArray.Length);
+}
+
+function int NumPlayers(){
+	return Level.Game.NumPlayers; // !!!
+}
+
+// 1v1 rankin / map rankin / restart
+// callvote 1v1 rankin WarmUpSeconds 0 AllowBrightSkins 1
+function CallNewVote(string S, PlayerController PC){
+	local int i;
+	if(!AllowCallNewVote(PC)) return;
+	Split(S, " ", Params);
+	SearchParams();
+	for(i = 0; i < Params.Length; i++) SearchMap(Params[i]);
+	for(i = 0; i < Params.Length; i++) SearchMode(Params[i]);
+	VotedString = class'zUtil'.static.Implode(" ", VotedStringArray);
+	if(VotedString != ""){
+		Caller = PC.PlayerReplicationInfo;
+		GotoState('VoteInProgress');
+	}
+}
+
+function bool AllowCallNewVote(PlayerController PC){
+	local int N, Diff;
+	switch(True){
+		case IsInState('VoteInProgress'): N = 12; break;
+		case PC.PlayerReplicationInfo.bOnlySpectator: N = 13; break;
+		case Caller == PC.PlayerReplicationInfo:
+			Diff = Level.TimeSeconds - LastCallTime;
+			if(Diff > 10) return True;
+			N = 20 + Diff; break;
+		default: return True;
+		
+	}
+	PC.ReceiveLocalizedMessage(class'UnallowedMessage', N);
+	return False;
+}
+
+
+function SearchParams(){
+	local VoteParam VP;
+	local int i;
+	for(i = 0; i < Params.Length; i++){
+		if(!IsValidVoteParameter(Params[i], VP)) continue;
+		//if(VP.Type == VT_Instant){
+		SetVotedString( VP.Parameter @ GetReadableType(VP.Type, Params[i+1]) );
+		AddTravel(3, VP.Parameter, Params[i+1]);
+		Params.Remove(i, 2);
+		i = i - 2;
+	}
+
+}
+
+function SearchMap(string S){
+	local int i;
+	if(TravelURL[0] != "") return;
+	for(i = 0; i < Maps.Length; i++){
+		if(!class'zUtil'.static.PregMatch(Maps[i], S)) continue;
+		AddTravel(0, Maps[i]);
+		SetVotedString(Maps[i], True);
+		break;
+	}
+}
+
+function SearchMode(string S){
+	if(TravelURL[1] != "") return;
+	switch( Locs(S) ){
+	case "1on1":
+	case "1v1":
+	case "1x1":
+	case "duel":
+		SetVotedString("1on1", True);
+		AddTravel(1, "Game", "xGame.xDeathMatch");
+		AddMutator("xWeapons.MutNoSuperWeapon");
+		AddMutator("XGame.MutNoAdrenaline");
+		AddMutator( string(Owner.Class) );
+		AddTravel(3, "TimeLimit", 15);
+		AddTravel(3, "DoubleDamage", False);
+		AddTravel(3, "SuperWeapons", False);
+		AddTravel(3, "WeaponStay", False);
+		AddTravel(3, "Adrenaline", False);
+		AddTravel(3, "MaxPlayers", 2);
+		AddTravel(3, "MinPlayers", Min(2, DeathMatch(Level.Game).MinPlayers));
+		break;
+	case "2on2":
+	case "2v2":
+	case "2x2":
+		SetVotedString("1on1", True);
+		AddTravel(1, "Game", "xGame.xTeamGame");
+		AddTravel(3, "TimeLimit", 20);
+		AddTravel(3, "DoubleDamage", True);
+		AddTravel(3, "SuperWeapons", False);
+		AddTravel(3, "MaxPlayers", 4);
+		AddTravel(3, "MinPlayers", Min(4, DeathMatch(Level.Game).MinPlayers));
+		break;
+	default: return;
+	}
+}
+
+function SetVotedString(string S, optional bool bFirst){
+	if(bFirst && VotedStringArray.Length != 0){
+		VotedStringArray.Insert(0, 1);
+		VotedStringArray[0] = S;
+		return;
+	}
+	VotedStringArray[VotedStringArray.Length] = S;
+}
+
+function AddMutator(string Mutator){
+	if(TravelURL[2] != "") Mutator = "," $ Mutator;
+	TravelURL[2] $= Mutator;
+}
+
+function AddTravel(byte i, coerce string S1, optional coerce string S2){
+	if(S2 != "") S2 = "=" $ S2;
+	TravelURL[i] $= "?" $ S1 $ S2;
+	if(i == 0 && S1 != "restart") TravelURL[0] = Mid(TravelURL[0], 1);
+}
+
+function string GetReadableType(EVoteParamType VP, optional string Value){
+	switch(VP){
+		case VT_Boolean: return string( bool(Value) );
+		case VT_Int: return string( int(Value) );
+		case VT_String: return Value;
+	}
+}
+
+function bool IsValidVoteParameter(string P, out VoteParam VP){
+	local int i;
+	for(i = 0; i < VoteParameters.Length; i++){
+		if(VoteParameters[i].Parameter ~= P){
+			VP = VoteParameters[i];
+			return True;
+		}
+	}
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	RemoteRole=ROLE_None
+	VoteParameters(0)=(Parameter="MaxPlayers",Type=VT_Int)
+	VoteParameters(1)=(Parameter="MinPlayers",Type=VT_Int)
+	VoteParameters(2)=(Parameter="TimeLimit",Type=VT_Int)
+	VoteParameters(3)=(Parameter="Game",Type=VT_String)
+	VoteParameters(4)=(Parameter="WeaponStay",Type=VT_Boolean)
+	VoteParameters(5)=(Parameter="SuperWeapons",Type=VT_Boolean)
+	VoteParameters(6)=(Parameter="AllowBrightSkins",Type=VT_Boolean)
+	VoteParameters(7)=(Parameter="Timeouts",Type=VT_Int)
+	VoteParameters(8)=(Parameter="WarmUpSeconds",Type=VT_Int)
+	VoteParameters(9)=(Parameter="bIntShield",Type=VT_Boolean)
+	VoteParameters(10)=(Parameter="DoubleDamage",Type=VT_Boolean)
+	VoteParameters(11)=(Parameter="Adrenaline",Type=VT_Boolean)
+	VoteParameters(12)=(Parameter="VotingTime",Type=VT_Int)
+	VoteParameters(13)=(Parameter="PartSpectators",Type=VT_Instant)
+}

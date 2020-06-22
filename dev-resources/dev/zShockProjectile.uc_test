@@ -1,0 +1,17 @@
+class zShockProjectile extends ShockProjectile;
+
+function Timer(){
+	Super.Timer();
+}
+
+simulated function PostBeginPlay(){
+	Debug("PostBeginPlay");
+	Super.PostBeginPlay();
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+}

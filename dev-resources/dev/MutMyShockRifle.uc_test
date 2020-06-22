@@ -1,0 +1,18 @@
+class MutMyShockRifle extends Mutator;
+
+function PostBeginPlay(){
+	Level.Game.BroadcastHandler.RegisterBroadcastHandler( Spawn(class'MyBroadcastHandler') );
+}
+
+function bool CheckReplacement(Actor A, out byte bSuperRelevant){
+    if(xWeaponBase(A) != None && xWeaponBase(A).WeaponType == class'XWeapons.ShockRifle') xWeaponBase(A).WeaponType = class'zShockRifle';
+	else if(ShockRiflePickup(A) != None) ShockRiflePickup(A).InventoryType = class'zShockRifle';
+	return Super.CheckReplacement(A, bSuperRelevant);
+}
+
+defaultproperties{
+	bAddToServerPackages=True
+	bAlwaysRelevant=True
+	RemoteRole=ROLE_SimulatedProxy
+	FriendlyName="My Shock Rifle"
+}

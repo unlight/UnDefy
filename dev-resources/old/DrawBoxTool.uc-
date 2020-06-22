@@ -1,0 +1,63 @@
+class DrawBoxTool extends Object;
+
+var float IndentX, LargeYL, OffsetY, MyOffsetY;
+var float PosY, PosX; // MyOffsetY
+var float XL, YL; // LargeYL
+var float BoxSizeX, BoxSizeY;
+var string MainTitle;
+var array<string> Titles;
+var array<string> Text[9];
+var array<float> Lengths;
+var color BorderColor, MainTitleColor, TitleColor, TextColor;
+var bool bFlex;
+
+function Draw(Canvas C){}
+
+function Initialize(Canvas C, string Title, int Len, float X, optional array<string> T){
+	local byte i;
+	local float X2, Y2;
+	C.StrLen("X", XL, YL);
+	MainTitle = Title;
+	IndentX = X; // IndentX = 0.015 * C.ClipX
+	BoxSizeX = GetBoxSizeX(C);
+	BoxSizeY = YL * (3 + Len);
+	if(T.Length > 0) Titles = T;
+	// length of strings
+	for(i = 0; i < Titles.Length; i++){
+		C.StrLen(Titles[i], X2, Y2);
+		Lengths[i] = X2;
+	}
+}
+
+function float GetBoxSizeX(Canvas C){
+	local byte i;
+	local float SizeX;
+	if(bFlex) return (C.ClipX - 2 * IndentX);
+	for(i = 0; i < Lengths.Length; i++){
+		SizeX += Lengths[i] + XL;
+	}
+	return (SizeX + XL);
+	
+}
+
+function DrawArrayLine(Canvas C, array<string> A){
+	local byte i;
+	for(i = 0; i < A.Length; i++){
+		C.CurX = Lengths[i]
+//		SetDrawPosition(C, i);
+//		C.DrawText(A[i]);
+	}
+//	for(i = 0; i < ArrayCount(S); i++) S[i] = ""; // очищаем массив
+	OffsetY += YL; // переходим на новую строку
+}
+
+function DrawBox(Canvas C){
+	C.DrawColor = BorderColor;
+	C.DrawTileStretched(Material'InterfaceContent.ScoreBoxA', BoxSizeX, BoxSizeY);
+}
+
+defaultproperties{
+	bFlex=False
+	MainTitleColor=class'HUD'.default.GoldColor
+	BorderColor=class'HUD'.default.BlackColor
+}

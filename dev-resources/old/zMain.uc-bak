@@ -1,0 +1,357 @@
+// ===================================================================
+// Saratov Unreal Community Mutator Pack v3 for Unreal Tournament 2004
+// ===================================================================
+// tokens: last picked super weapon 
+// tokens: ближайший не/доступный поверап
+// tokens: ближайший не/доступный оружие
+// todo: рекламные фишки
+// может быть избавиться от structov
+// разделение маленького и большого щита
+// todo: глобальная настройка для клубов т.е. юзер создает себе бит маску
+// -- выполняет команду и все его настройки включаются
+// вынести таймаут отдельно
+
+class zMain extends Mutator config;
+
+var PlayerController Me;
+var float TimeTick;
+var config bool bFirstRun;
+
+var(Timeout) config byte Timeouts;
+var(Timeout) config int TimeoutLength;
+var(Timeout) int Players[2]; // ид игроков
+var(Timeout) int PlasyersTimeouts[2]; // сколько раз они вызывали таймаут
+var(Timeout) PlayerReplicationInfo Caller; // уставший от жизни анрилер
+
+var(Client) config bool bClassicSniperSmoke;
+var(Client) config bool bMyWeaponViewShake;
+var(Client) config bool bDamageIndicators;
+var(Client) config byte EnemyCam;
+var(Client) config bool bPickupConsoleMessages;
+struct DeadInfo{
+	var float RestartTime;
+	var PlayerController Player;
+};
+var array<DeadInfo> DeadPlayers;
+var(Server) config byte ForceRespawnTime; // 0 - ignore
+
+var(ServerHitSounds) config bool bAllowHitSounds;
+var(ClientHitSounds) config byte FeedbackType;
+var(ClientHitSounds) config byte FeedbackLine; // if FeedbackLine == 70 & Damage == 70 sound will be the loudest (100%)
+var(ClientHitSounds) config float FeedbackVolume; // hitsound volume (ignores in FeedbackType = 3)
+var(ClientHitSounds) config int iSimpleHitType;
+
+var(ClientOverlay) config byte OverlayMetric;
+var(ClientOverlay) config int OverlayPosX;
+var(ClientOverlay) config int OverlayPosY;
+var(ClientOverlay) config bool bMeInOverlay;
+var(ClientOverlay) config color OverlayBackgroundColor;
+var(ClientOverlay) config byte OverlaySize;
+var(ClientOverlay) config bool bOverlayNewLocations;
+var(ClientOverlay) config bool bTeamOverlay;
+var(ServerOverlay) config bool bAllowTeamOverlay; // server
+var(Overlay) bool bTeamOverlayEnabled; // replicated from server
+// if 'allow' at the start, than is will be server var :-)
+// if '..enabled' at the end, than is will be replicate to client :-)
+
+var(ClientBrightSkins) config bool bEnableBrightSkins;
+var(ClientBrightSkins) config string EnemySkin;
+var(ClientBrightSkins) config string TeamSkin;
+
+var(WarmUp) config int WarmUpSeconds; // -1 disabled, 0 - infinity
+var(WarmUp) zWarmUp WarmUp;
+
+var(EnemyBones) config string EnemyBones;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) bTeamOverlayEnabled;
+}
+
+function PreBeginPlay(){
+	local string LocalURL, InOpt, S;
+	local zUtil F;
+	Super.PreBeginPlay();
+	// 	get options
+	LocalURL = Level.GetLocalURL();
+	F = New class'zUtil';
+	if(F.GetOption(LocalURL, "AllowHitSounds", InOpt)) bAllowHitSounds = bool(InOpt);
+	if(F.GetOption(LocalURL, "Timeouts", InOpt)) default.Timeouts = int(InOpt);
+	if(F.GetOption(LocalURL, "WarmUpSeconds", InOpt)) WarmUpSeconds = int(InOpt);
+//	Debug("GetOption - WarmUpSeconds" @ WarmUpSeconds @ default.WarmUpSeconds);
+	// force respawn
+	ForceRespawnTime = Clamp(default.ForceRespawnTime, 0, 8);
+	if(ForceRespawnTime != 0) DeathMatch(Level.Game).bForceRespawn = False;
+	// team overlay
+	S = Level.Game.GetHumanReadableName();
+	if(S ~= "xTeamGame" && default.bAllowTeamOverlay){
+		bTeamOverlayEnabled = True;
+		Spawn(class'zTeamInfoUpdater', Self);
+		Spawn(class'zBeacons', Self);
+	}
+	// warmup
+	if(WarmUpSeconds >= 0) WarmUp = Spawn(class'zWarmUp', Self);
+	// timeout
+	Timeouts = Clamp(default.Timeouts, 0, 9);
+	default.TimeoutLength = Max(10, default.TimeoutLength);
+	SaveMyConfig();
+}
+
+function PostBeginPlay(){
+	Super.PostBeginPlay();
+	Level.Game.AddGameModifier( Spawn(class'zGameRules', Self) );
+}
+
+simulated function Timer(){
+	Me = Level.GetLocalPlayerController();
+	if(Me == None || Me.PlayerReplicationInfo == None || Me.MyHUD == None) return;
+	Me.ClientMessage(class'zUtil'.static.Paint("^0Welcome to Unreal64 MP 2004 v3! Type ^3help^0 in console to show available commands."));
+	class'zInteraction'.static.LoadInteraction(Me, 'zInteraction');
+	if(default.bEnableBrightSkins){
+		class'zInteraction'.static.LoadInteraction(Me, 'BrightSkins');
+		Me.ConsoleCommand("EnemySkin" @ default.EnemySkin);
+		Me.ConsoleCommand("TeamSkin" @ default.TeamSkin);
+	}
+	// load client settings if needed
+	Me.ConsoleCommand("ClassicSniperSmoke" @ int(default.bClassicSniperSmoke));
+	Me.ConsoleCommand("WeaponViewShake" @ int(default.bMyWeaponViewShake));
+	Me.ConsoleCommand("EnemyCam" @ default.EnemyCam);
+	Me.ConsoleCommand("PickupConsoleMessages" @ int(default.bPickupConsoleMessages));
+	// here need only commands that requires hack like 'WeaponViewShake' or clamp
+	// i think clamp dont need :)
+	if(bTeamOverlayEnabled) Me.MyHUD.AddHudOverlay( Spawn(class'zTeamHudOverlay') );
+	SaveMyConfig();
+	Disable('Timer');
+}
+
+// BroadcastHandler.UpdateSentText
+simulated function PostNetBeginPlay(){
+	Super.PostNetBeginPlay();
+	if(Level.NetMode != NM_DedicatedServer) SetTimer(0.5, True);
+}
+
+function Mutate(string MutateString, PlayerController PC){
+	local string Reason, S;
+	local int Index;
+	local zUtil F;
+	F = New class'zUtil';
+	if(MutateString ~= "CallTimeOut"){
+		Reason = AllowCallTimeOut(PC, Index);
+	    if(Reason != ""){
+			PC.ClientMessage(Reason);
+			goto NextMutator;
+		}
+		PlasyersTimeouts[Index]++;
+		Caller = PC.PlayerReplicationInfo;
+		GotoState('Paused');
+	}else if(MutateString ~= "CallTimeIn"){
+		if(Caller != None && Caller == PC.PlayerReplicationInfo) GotoState('PreMatch');
+	}else if(MutateString ~= "ShowTime" || MutateString ~= "CurrentTime"){
+		S = "Current time:^3";
+		S @= F.LeadingZeros(Level.Hour) $ ":" $ F.LeadingZeros(Level.Minute) $ ":" $ F.LeadingZeros(Level.Second);
+		S @= "(" $ F.ShortDayOfWeek(Level.DayOfWeek) $ "," @ Level.Day @ F.ShortMonthName(Level.Month) @ Level.Year $ ")";
+		PC.ClientMessage( F.Paint(S) );
+	}else if(MutateString == "I'm Dead"){
+//		Debug("MeIsDead" @ PC);
+		if(ForceRespawnTime != 0) ServerNotifyDead(PC);
+	}else if(MutateString == "I'm Ready"){
+		if(PC.PlayerReplicationInfo.bReadyToPlay) goto NextMutator;
+		PC.PlayerReplicationInfo.bReadyToPlay = True;
+		BroadcastLocalizedMessage(class'ReadyMessage', 1, PC.PlayerReplicationInfo);
+	}else if(MutateString == "I'm not Ready"){
+		if(!PC.PlayerReplicationInfo.bReadyToPlay) goto NextMutator;
+		PC.PlayerReplicationInfo.bReadyToPlay = False;
+		BroadcastLocalizedMessage(class'ReadyMessage', 2, PC.PlayerReplicationInfo);
+	}
+	NextMutator:
+	if(NextMutator != None) NextMutator.Mutate(MutateString, PC);
+}
+
+function string ParseChatPercVar(Controller C, string S){
+	local zLinkedReplicationInfo Linked;
+	local Pickup Pickup, MinPickup;
+	local float Distance, MinDistance;
+	if(NextMutator != None) S = NextMutator.ParseChatPercVar(C, S);
+	if(S == "%e" && C.Enemy != None) return C.Enemy.GetHumanReadableName();
+//	if(Level.Game.bTeamGame) Linked = class'zLinkedReplicationInfo'.static.Get(C.PlayerReplicationInfo);
+	if(C.PlayerReplicationInfo != None) Linked = class'zLinkedReplicationInfo'.static.Get(C.PlayerReplicationInfo);
+	if(Linked != None){
+		if(S == "%i") S = Linked.LastPickupItem;
+		else if(S == "%n") S = Linked.LastPickupWeapon;
+		else if(S == "%u") S = Linked.LastPickupPowerUp;
+		else if(S == "%c"){
+			MinDistance = 52.5 * 20;
+			foreach DynamicActors(class'Pickup', Pickup){
+				if(!(Pickup.IsA('WeaponPickup') || Pickup.IsA('ShieldPickup') || Pickup.IsA('UDamagePack'))) continue;
+				Distance = VSize(C.Pawn.Location - Pickup.Location);
+				if(Distance > MinDistance) continue;
+				MinDistance = Distance;
+				MinPickup = Pickup;
+			}
+			if(MinPickup != None) S = MinPickup.GetHumanReadableName();
+		}
+	}
+	return S;
+}
+function ServerNotifyDead(PlayerController P){
+	local DeadInfo LocalDeadInfo;
+//	Debug("LocalDeadInfo.RestartTime" @ LocalDeadInfo.RestartTime);
+	LocalDeadInfo.RestartTime = Level.TimeSeconds + ForceRespawnTime;
+	LocalDeadInfo.Player = P;
+	DeadPlayers[DeadPlayers.Length] = LocalDeadInfo;
+	Enable('Tick');
+}
+simulated function NotifyLocalPlayerDead(PlayerController P){
+//	Debug("NotifyLocalPlayerDead" @ P.GetHumanReadableName() @ "Me" @ Me.GetHumanReadableName());
+	if(Me == P && P.IsInState('Dead')) P.ServerMutate("I'm Dead");
+}
+function ForceRespawnPlayers(){
+	local byte i;
+//	Debug("Ticking" @ "DeadPlayers.Length" @ DeadPlayers.Length);
+	for(i = 0; i < DeadPlayers.Length; i++){
+		if(!DeadPlayers[i].Player.IsInState('Dead')){ // живой
+			DeadPlayers.Remove(i, 1); // i = i - 1; maybe
+			return;
+		}
+		if(Level.TimeSeconds > DeadPlayers[i].RestartTime){
+			Level.Game.RestartPlayer(DeadPlayers[i].Player);
+			DeadPlayers.Remove(i, 1);
+		}
+	}
+}
+function Tick(float DeltaTime){
+	if(TimeTick < 1){ TimeTick += DeltaTime; return; }
+	TimeTick = 0; 
+	if(DeadPlayers.Length > 0){ ForceRespawnPlayers(); return; }
+	Disable('Tick');
+}
+function bool CheckReplacement(Actor A, out byte bSuperRelevant){ // если вернуть False то удалим
+	local PlayerReplicationInfo PlayerReplicationInfo;
+	PlayerReplicationInfo = PlayerReplicationInfo(A);
+	if(PlayerReplicationInfo != None){
+		class'zLinkedReplicationInfo'.static.Append(PlayerReplicationInfo);
+	}
+	return True;
+}
+function GiveAllWeapons(Pawn P){
+	local Inventory Inv;
+	local byte i, Count;
+	if(WarmUp == None || WarmUp.WeaponNames.Length == 0) return;
+	for(i = 0; i < WarmUp.WeaponNames.Length; i++) P.GiveWeapon(WarmUp.WeaponNames[i]);
+	for(Inv = P.Inventory; Inv != None; Inv = Inv.Inventory){
+		if(Weapon(Inv) != None) Weapon(Inv).SuperMaxOutAmmo();
+		Count++;
+		if(Count > 250) return;
+	}
+}
+function ModifyPlayer(Pawn P){
+	local Controller C;
+	Super.ModifyPlayer(P);
+	P.bAlwaysRelevant = True;
+	if(WarmUp != None) GiveAllWeapons(P);
+	// bright skins
+	for(C = Level.ControllerList; C != None; C = C.NextController)
+		if(C.IsA('PlayerController'))
+			PlayerController(C).ReceiveLocalizedMessage(class'PawnSpawned', P.PlayerReplicationInfo.PlayerID);
+}
+
+function int FindIndex(int Id){
+	if(Players[1] == Id) return 1;
+	return 0;
+}
+function string AllowCallTimeOut(PlayerController PC, out int Index){
+	Index = FindIndex(PC.PlayerReplicationInfo.PlayerID);
+	if(Level.Game.bTeamGame || Level.Game.MaxPlayers != 2 || (Level.Game.NumPlayers + Level.Game.NumBots) != 2) return "Timeout can be called only in duel!";
+	if(PC.IsSpectating()) return "Spectators can't call timeout!";
+	if(Level.Game.GameReplicationInfo.ElapsedTime == 0 || Level.Game.GameReplicationInfo.RemainingTime == 900) return "Can't call timeout during warmup!";
+	if(PlasyersTimeouts[Index] >= Timeouts) return "No more timeouts for you!";
+	if(Level.Pauser != None){
+		if(Level.Pauser == PC.PlayerReplicationInfo) return "Your timeout in progress!";
+		return "Match paused by" @ Level.Pauser.PlayerName $ "!";
+	}
+	if(!Level.Game.GameReplicationInfo.bMatchHasBegun || Level.Game.GameReplicationInfo.RemainingTime == 0 || Level.Game.TimeLimit == 0) return "Can't call timeout!";
+	return "";
+}
+
+function TimeOutEnd(){
+	Caller = None;
+	Level.Pauser = None;
+}
+
+state Paused{
+	function BeginState(){
+		Level.Game.BroadcastLocalized(Self, class'TimeOutMessage', -2, Caller);
+		TimeoutLength = default.TimeoutLength;
+		Level.Pauser = Caller;
+		SetTimer(1, True);
+	}
+	function Timer(){
+		Level.Game.BroadcastLocalized(Self, class'ResumeTimeMessage', TimeoutLength);
+		TimeoutLength = TimeoutLength - 1;
+		if(TimeoutLength == -1){
+			TimeOutEnd();
+			GotoState('');
+		}
+	}
+}
+state PreMatch{
+	function BeginState(){
+		TimeoutLength = 5;
+		Level.Game.BroadcastLocalized(Self, class'TimeOutMessage', -1, Caller);
+	}
+	function Timer(){
+		Level.Game.BroadcastLocalized(Self, class'ResumeTimeMessage', TimeoutLength);
+		TimeoutLength = TimeoutLength - 1;
+		if(TimeoutLength == -1) GotoState('');
+	}
+	function EndState(){
+		TimeOutEnd();
+	}
+}
+
+simulated function SaveMyConfig(){
+	if(!default.bFirstRun) return;
+	default.bFirstRun = False;
+	StaticSaveConfig();
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	bFirstRun=True
+	ForceRespawnTime=8
+	Timeouts=1
+	TimeoutLength=60
+	bClassicSniperSmoke=True
+	bMyWeaponViewShake=False
+	bDamageIndicators=True
+	EnemyCam=55
+	bPickupConsoleMessages=True
+	FriendlyName="Unreal64 Pack v3";
+	Description="Saratov Unreal Community Mutator Pack 2004 v3. This mutator adds new features (which unfortunately didn't exists in UTComp and TTM), such as timeout, enemy's cam, various team chat tokens, etc. Web: unreal64.ru / community.livejournal.com/unreal64/ IRC: irc.dalnet.ru #unreal64"
+	GroupName="Unreal64Pack"
+	bAddToServerPackages=True
+	bAlwaysRelevant=True
+	RemoteRole=ROLE_SimulatedProxy
+	bAlwaysTick=True
+	FeedbackType=2
+	FeedbackLine=20
+	FeedbackVolume=1.0
+	iSimpleHitType=1
+	OverlayMetric=0
+	bMeInOverlay=True
+	OverlayPosX=8
+	OverlayPosY=80
+	bAllowTeamOverlay=True
+	OverlayBackgroundColor=(R=10,G=10,B=10,A=120)
+	OverlaySize=1
+	bOverlayNewLocations=True
+	bAllowHitSounds=False
+	bEnableBrightSkins=False
+	EnemySkin="Gorge/Blue/250"
+	TeamSkin="Reinha/None/120"
+	EnemyBones="25/25/10"
+	WarmUpSeconds=-1
+	bTeamOverlay=True
+}

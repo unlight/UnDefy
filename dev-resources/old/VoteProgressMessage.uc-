@@ -1,0 +1,13 @@
+class VoteProgressMessage extends VoteMessage;
+
+// abstained - גמחהונזאכטüס
+static function string GetString(optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	local zVoting V;
+	V = zVoting(O);
+	if(V != None) return Repl("Voted Yes (%Y)", "%Y", V.VotedYes) @ Repl("Voted No (%N)", "%N", V.VotedNo);
+}
+
+defaultproperties{
+	Lifetime=5
+	PosY=0.38
+}

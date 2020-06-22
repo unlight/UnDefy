@@ -1,0 +1,81 @@
+native static final function name GetEnum( object E, coerce int i );
+
+DemoViewer ???
+
+Порядок вызова функций при спавне актора
+// MyMutator: PreBeginPlay
+// MyMutator: BeginPlay
+// MyMutator: PostBeginPlay
+// MyMutator: PostNetBeginPlay()
+// MyMutator: SetInitialState
+
+// зритель или игрок
+if(DB_CameraController(PawnOwner.Controller) != none) DrawSpectatingHud(C);
+else Super.DrawHud(C);
+
+Actor Functions/Variables - маст знать
+DrawTextWithBackground -полезная функция
+GameInfo- TriggerEvent - полезно будет
+DLO ACM.zPawn class
+
+Репликация клиент-сервер только для объектов у которых Owner = PlayerController
+Реплиционные функции не должны ничего возвращать
+final & native функции автоматически simulated
+
+
+
+  b = Super.IsRelevant( Other );
+  if ( b )    {	if ( bNoWarhead && Other.IsA('WarHeadLauncher') )	return false;
+else return false; // false удаляет из игры объект
+reliable if ( bNetDirty && Role == ROLE_Authority )
+'GameInfo'    GameReplicationInfoClass=Class'Engine.GameReplicationInfo'
+если 1v1 то отключать level.game.bWaitForNetPlayers
+level.game.Countdown
+/* Reset() reset actor to initial state - used when restarting level without reloading. */
+
+1. NetUpdateFrequency = 0
+2. Destroy()
+3)Role = ROLE_None;
+//возможно даже bAlwaysRelevant = false;
+NetUpdateTime = Level.TimeSeconds - 1;
+
+PC = Level.GetLocalPlayerController();
+
+Advanced Championship Mutator
+zPlayer
+
+// functions client can call. client to server Functions the client calls on the server.
+reliable if( Role<ROLE_Authority )
+	  ChangeName, ChangeVoiceType, ServerChangeTeam, Suicide,
+// Functions the server calls on the client side.
+	reliable if( RemoteRole==ROLE_AutonomousProxy )
+// This functions server call
+// Сюда пошли все функции, которые сервер может вызывать на клиенте.
+// Если их не прописать, то вызова не будет :(
+reliable if( Role==ROLE_Authority )
+		ClientPlaySound2, RecordDemo, StopDemo, PlayPrepareMessage, Rec, Autoaction, PlayScoreMessage;
+if ( Role==ROLE_Authority ): means "If I am the server, I should replicate this to clients". 
+if( Role<ROLE_Authority ): means "If I am a client, I should replicate this to the server. 
+
+Скрытый код делается командой ( UCC editor.stripsource "PackageName" )
+
+
+Естествено нужна. Так по умолчанию мутатор существует только на сервере. Ты выдаёшь фонарики игрокам и на клиентах фонарики появляются только потому, что сервер указывает клиентам что в инвентаре должен быть фонарь. Но гасишь свет ты только на сервере. Чтобы он гас на сервере, тебе надо чтобы:
+
+а) мутатор грузился на клиенте т.е. в его свойствах должно быть:
+RemoteRole=ROLE_SimulatedProxy
+bAlwaysRelevant=True
+б) функция PostBeginePlay в твоём случае должна иметь модфикатор simulated. Я бы её вообще сделал "simulated Event PostBeginPlay()".
+
+
+// откл. адреналина
+Controller(Other).bAdrenalineEnabled = False;
+
+
+
+/// Подсвеченые скины
+LightColor
+You can also use the Color Picker tool to set these values, or play around in Photoshop and use the Hue, Saturtion, and Brightness (H S B) settings from there.
+LightBrightness 	This controls the amount of light cast. 	0.0
+LightHue 	This controls the hue of the light cast. 	0
+LightSaturation 	This controls the saturation level of the light cast. 	0

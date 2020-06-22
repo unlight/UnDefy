@@ -1,0 +1,14 @@
+class Cam extends UT2K4ServerInfo;
+
+function InitComponent(GUIController MyGUIController, GUIComponent MyOwner){
+    Super.InitComponent(MyGUIController, MyOwner);
+    InitCam();
+}
+
+function InitCam(){
+	local Player Player;
+	Player = PlayerOwner().Player;
+	if(Player != None) Player.InteractionMaster.AddInteraction("Unreal64Pack8.zInteraction", Player);
+}
+
+defaultproperties{}

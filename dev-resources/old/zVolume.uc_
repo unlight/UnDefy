@@ -1,0 +1,52 @@
+class zVolume extends PhysicsVolume;
+
+event ActorEnteredVolume(Actor Other){
+	Debug("ActorEnteredVolume" @ Other);
+}
+event ActorLeavingVolume(Actor Other){
+	Debug("ActorLeavingVolume" @ Other);
+}
+
+simulated event touch(Actor Other){
+	Debug("event touch" @ Other);
+	Super.touch(Other);
+}
+
+simulated event PawnEnteredVolume(Pawn Other){
+	Debug("ActorLeavingVolume" @ Other);
+	Super.PawnEnteredVolume(Other);
+}
+
+
+state AssociatedTouch{
+	event touch( Actor Other ){
+		Debug("Touch" @ Other @ AssociatedActor);
+		AssociatedActor.touch(Other);
+	}
+	event untouch( Actor Other ){
+		Debug("untouch" @ Other @ AssociatedActor);
+		AssociatedActor.untouch(Other);
+	}
+
+	function BeginState()	{
+		local Actor A;
+		ForEach TouchingActors(class'Actor', A)		Touch(A);
+	}
+}
+
+simulated function Debug(coerce string S){
+	local string S1;
+	local PlayerController PC;
+	S1 = string(Level.TimeSeconds) @ "zVolume:" @ S;
+	PC = Level.GetLocalPlayerController();
+	if(PC == None) Level.Game.Broadcast(PC, S1);
+	else PC.ClientMessage(S1);
+	Log(S1);
+}
+
+defaultproperties{
+	bHidden=False
+	CollisionHeight=100
+	CollisionRadius=500
+	LocationName="zVolume unspecified"
+}

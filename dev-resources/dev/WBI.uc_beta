@@ -1,0 +1,87 @@
+class WBI extends Interaction dependson(HudCDeathMatch); // hudbase
+
+var PlayerController Me;
+var config HudCDeathMatch.SpriteWidget HudBorderShield;
+var config HudCDeathMatch.SpriteWidget BarBorder;
+// tmp
+var config float HudBorderShieldPosX;
+var config float HudBorderShieldPosY;
+var config float IconSizeScale;
+var config float OffSetA;
+var config int StartX;
+var config int StartY;
+var config byte tDrawStyle;
+
+event Initialized(){
+	Me = ViewportOwner.Actor;
+//	WBO = new class'WeaponBar';
+	Me.MyHUD.bShowWeaponBar = False;
+}
+
+function PostRender(Canvas C){
+	DrawWeaponBar(C, Me.Pawn, Me.MyHUD);
+}
+
+function DrawWeaponBar(Canvas C, Pawn PawnOwner, HUD H){
+	local int i, Count, Pos;
+	local float IconOffset;
+	local float HudScaleOffset, HudMinScale;
+	local Inventory Inv;
+	local Weapon W, PendingWeapon;
+	
+	local Material Icon;
+	local float PriAmmoCount, AltAmmoCount;
+	local HudCDeathMatch HUD;
+	local Weapon Weapons[9];
+	local float IconSizeX, IconSizeY;
+	local Texture Tex;
+	HUD = HudCDeathMatch(H);
+	
+	if(Vehicle(PawnOwner) != None) return;
+	for(Inv = PawnOwner.Inventory; Inv != None; Inv = Inv.Inventory){
+		if(++Count > 100) break;
+		W = Weapon(Inv);
+		if(W == None || W.IconMaterial == None) continue;
+//		Weapons[Weapons.Length] = W;
+		if(W.InventoryGroup == 0) Pos = 8;
+		else if(W.InventoryGroup < 10) Pos = W.InventoryGroup - 1;
+		else continue;
+		Weapons[Pos] = W;
+//		if(Weapons[Pos] != None ) ExtraWeapon[Pos] = 1;
+//		else Weapons[Pos] = W;
+	}
+	// draw.
+	C.Font = H.LoadFont(7);
+	C.SetPos(StartX, StartY);
+	C.Style = tDrawStyle;
+	
+//	HudBorderShield.PosX = HudBorderShieldPosX;
+//	HudBorderShield.PosY = HudBorderShieldPosY;
+//	BarBorder.OffSetY = 0;
+//	HUD.DrawSpriteWidget(C, BarBorder);
+	
+	for(i = 0; i < 9; i++){
+		W = Weapons[i];
+		if(W == None) continue;
+		IconSizeX = W.IconCoords.X2 - W.IconCoords.X1;
+		IconSizeY = W.IconCoords.Y2 - W.IconCoords.Y1;
+		C.DrawTile(W.IconMaterial, IconSizeX*IconSizeScale, IconSizeY*IconSizeScale, W.IconCoords.X1, W.IconCoords.Y1, IconSizeX, IconSizeY);
+		W.GetAmmoCount(AltAmmoCount, PriAmmoCount); // not AltAmmoCount
+		C.DrawText(int(PriAmmoCount));
+		C.SetPos(StartX, C.CurY + OffSetA);
+	}
+}
+
+defaultproperties{
+	HudBorderShieldPosX=0.0
+	HudBorderShieldPosY=0.5
+	BarBorder=(WidgetTexture=Texture'HudContent.Generic.HUD',DrawPivot=DP_LowerLeft,RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=39,X2=94,Y2=93),TextureScale=0.53,PosX=0.139,PosY=1.0,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(G=255,R=255,B=255,A=200),Tints[1]=(G=255,R=255,B=255,A=200))
+	HudBorderShield=(WidgetTexture=Texture'HudContent.Generic.HUD',PosX=0.0,PosY=1.0,OffsetX=0,OffsetY=-54,DrawPivot=DP_LowerLeft,RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=110,X2=166,Y2=163),TextureScale=0.53,PosY=1.0,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(G=255,R=255,B=255,A=255),Tints[1]=(G=255,R=255,B=255,A=255))
+	tDrawStyle=1
+	StartY=80
+	StartX=40
+	OffSetA=5
+	IconSizeScale=0.5
+	bActive=False
+	bVisible=True
+}

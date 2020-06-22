@@ -1,0 +1,48 @@
+class zEnemyCam extends Interaction;
+
+var xPawn ViewPawn;
+
+event Initialized(){
+	class'zMain'.default.EnemyCam = Clamp(class'zMain'.default.EnemyCam, 0, 99);
+	if(class'zMain'.default.EnemyCam == 0) Master.RemoveInteraction(Self);
+}
+
+event NotifyLevelChange(){
+	Master.RemoveInteraction(Self);
+}
+
+function DetectViewPawn(){
+	local xPawn P;
+//	if(ViewportOwner == None || ViewportOwner.Actor == None) return;
+	foreach ViewportOwner.Actor.DynamicActors(class'xPawn', P){
+		if(ViewportOwner.Actor.ViewTarget != P && P.PlayerReplicationInfo != None){
+			ViewPawn = P;
+			return;
+		}
+	}
+	ViewPawn = None;
+}
+
+// Pawn(ViewportOwner.Actor.ViewTarget) - тварь за которой смотрим
+function PostRender(Canvas C){
+	local int DrawBoxPosX, DrawBoxPosY;
+	local int SmallScreenWidth, SmallScreenHeight;
+	if(!ViewportOwner.Actor.PlayerReplicationInfo.bOnlySpectator) return;
+	if(ViewPawn == None || ViewPawn.PlayerReplicationInfo == None){
+		DetectViewPawn();
+		return;
+	}
+	// screen size
+	SmallScreenWidth = C.ClipX * class'zMain'.default.EnemyCam / 200;
+	SmallScreenHeight = C.ClipY * class'zMain'.default.EnemyCam / 200;
+	DrawBoxPosX = C.ClipX - SmallScreenWidth - 5;
+	DrawBoxPosY = 5;
+	// render enemy view
+	C.DrawPortal(DrawBoxPosX, DrawBoxPosY, SmallScreenWidth, SmallScreenHeight, ViewPawn, ViewPawn.Location + vect(0,0,60), ViewPawn.Rotation, 90);
+	C.SetPos(DrawBoxPosX, DrawBoxPosY);
+	C.DrawBox(C, SmallScreenWidth, SmallScreenHeight);
+}
+
+defaultproperties{
+	bVisible=True
+}

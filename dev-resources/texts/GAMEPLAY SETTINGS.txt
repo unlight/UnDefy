@@ -1,0 +1,6 @@
+=========================
+*** GAMEPLAY SETTINGS ***
+=========================
+//LightningGunArcs - how many child arcs produced by lightning gun fire (0..3, default = 3)
+bIncreaseShockFireRate - increase shock rifle primary fire rate up to 0.8 (default = False, 0.7)
+//bLinkPower - link gun alternative fire pass through shield gun's shield (default = False)

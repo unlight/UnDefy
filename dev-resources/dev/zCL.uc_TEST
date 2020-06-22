@@ -1,0 +1,46 @@
+class zCL extends Commandlet;
+
+var int intparm;
+var string strparm;
+
+function int Main(string Param){
+	local array<string> Arr;
+	local int i;
+	Arr[0] = "0 str";
+	Arr[1] = "1 str";
+	Arr[2] = "2 str";
+	Arr[3] = "3 str";
+	Arr[4] = "4 str";
+	DumpArray(Arr);
+	Arr.Remove(1, 1);
+	Log("After Removed");
+	DumpArray(Arr);
+	return 0;
+}
+
+function DumpArray(array<string> Arr){
+	local int i;
+	local string S;
+	S = class'zUtil'.static.Implode(",", Arr);
+	Log(S);
+}
+
+//function int Main( string Parms ){
+//    log( "Hello, world!" );
+//    if( Parms!="" )
+//        log( "Command line parameters=" $ Parms );
+//    if( intparm!=0 )
+//        log( "You specified intparm=" $ intparm );
+//    if( strparm!="" )
+//        log( "You specified strparm=" $ strparm );
+//}
+
+defaultproperties{
+     HelpCmd="HelloWorld"
+     HelpOneLiner="Sample"
+     HelpUsage="HelloWorld"
+     HelpParm(0)="IntParm"
+     HelpParm(1)="StrParm"
+     HelpDesc(0)="An integer parameter"
+     HelpDesc(1)="A string parameter"
+}

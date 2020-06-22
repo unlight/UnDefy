@@ -1,0 +1,134 @@
+class AntiCheatInteraction extends Object; // zObject для проверки каждые 2-3 секунды
+
+struct StructPackage{
+	var string Pack;
+	var string Hash;
+};
+var const private array<StructPackage> Packs;
+
+// можно еще перевести 16-ричную в 32/64 ричную систему чтобы уменьшить траффик
+final static function Mutation(string MutateString, PlayerController PC, zMain tmp)
+{
+	local string Hash, S;
+	local byte Index;
+	
+	Index = byte(Mid(MutateString, 7, 1));
+	Hash = Mid(MutateString, 8);
+	S @= "* Checkup" @ "^8" $ default.Packs[Index].Pack;
+
+	if(Index >= default.Packs.Length) S @= "^3Not Checked!";
+	else if(default.Packs[Index].Hash == Hash) S @= "^2OK ;-)";
+	else S @= "^1NOT OK!";
+	//tmp.Debug(S);
+	class'zUtil'.static.ConsoleMessage(PC, S);
+}
+
+static function Disconnect(PlayerController Player, string C, optional bool bMustBeEmpty)
+{
+	local string S;
+	S = "Say CLIENT HAS SUBSTITUTED '" $C$ "' CLASS!";
+	if(bMustBeEmpty) S @= "(must be empty)";
+	
+	Player.ConsoleCommand(S);
+	Player.ConsoleCommand("disconnect");
+}
+
+static function PostBeginPlayCheck(PlayerController P)
+{
+	local ExtendedConsole C;
+	local int i;
+	local string S;
+	local bool B;
+	local Interaction Intr;
+	local GUIController GC;
+	
+	C = ExtendedConsole(P.Player.Console);
+	if(C == None || C.Class != class'XInterface.ExtendedConsole') Disconnect(P, "Console");
+	// а могут так: set XInterface.ExtendedConsole (config) MusicManagerClassName
+	// т.е. надо проверять каждые 2-3 сек вот эти классы (config)
+	if(C.NeedPasswordMenuClass != "GUI2K4.UT2K4GetPassword") Disconnect(P, "Password Menu");
+	if(C.MusicManagerClassName != "GUI2K4.StreamPlayer") Disconnect(P, "Music Player Menu"); // + пустой
+	if(C.ChatMenuClass != "GUI2K4.UT2K4InGameChat") Disconnect(P, "InGame Chat Menu");
+	if(C.StatsPromptMenuClass != "GUI2K4.UT2K4StatsPrompt") Disconnect(P, "Stats Menu");
+	if(C.ServerInfoMenu != "GUI2K4.UT2K4ServerInfo") Disconnect(P, "ServerInfo Menu");
+	if(C.WaitingGameClassName != "") Disconnect(P, "Waiting Game", True);
+	
+	if(P.InputClass != class'Engine.PlayerInput') Disconnect(P, "Input");
+	
+	if(P.Player.GUIController.Class != class'GUI2K4.UT2K4GUIController') Disconnect(P, "GUI Controller");
+	for(i = 0; i < P.Player.LocalInteractions.Length; i++){
+		Intr = P.Player.LocalInteractions[i];
+		if(StreamInteraction(Intr) != None){
+			if(StreamInteraction(Intr).Class != class'Engine.StreamInteraction') Disconnect(P, "Stream Interaction"); // Engine.Engine StreamPlayer = Engine.StreamInteraction
+			if(StreamInteraction(Intr).PlaylistManager.Class != class'Engine.StreamPlaylistManager') Disconnect(P, "Stream Playlist Manager");
+		}
+//		switch(P.Player.LocalInteractions[i].Class){
+//			case class'Engine.StreamInteraction': break;
+//			default: Disconnect(P, "An Interaction (" $ GetItemName(string(P.Player.LocalInteractions[i].Class)) $ ")");
+//		}
+	}
+	// config array<AutoLoadMenu> AutoLoad
+	GC = GUIController(P.Player.GUIController);
+	for(i = 0; i < GC.AutoLoad.Length; i++){
+		B = GC.AutoLoad[i].MenuClassName == "";
+		B = B || GC.AutoLoad[i].MenuClassName == "GUI2K4.UT2K4InGameChat";
+		if(!B) Disconnect(P, "GUIController AutoLoad Menu", True);
+	}
+	S = P.ConsoleCommand("get GUI2K4.UT2K4GUIController AutoLoad");
+	switch(S){
+		case "": break;
+		case "((MenuClassName=,bPreInitialize=False))": break;
+		case "((MenuClassName=" $Chr(34)$ "GUI2K4.UT2K4InGameChat" $Chr(34)$ ",bPreInitialize=True))": break;
+		default: Disconnect(P, "AutoLoad Menu", True);
+	}
+	// UXBDemo 2.1
+	// set XInterface.ExtendedConsole WaitingGameClassName AntiTCC119Beta22.AntiTCCPlayerKickHandler|PlayWaitingGame|set XInterface.ExtendedConsole WaitingGameClassName
+	// [XGame.xPlayer] MidGameMenuClass=GUI2K4.UT2K4DisconnectOptionPage
+	// StreamPlaylistManager. config array<PlaylistParser> ParserType;
+	// [Engine.StreamPlaylistManager]
+	// ParserType=(Type=SPT_B4S,ParserClass="Engine.B4SParser")
+	// ParserType=(Type=SPT_M3U,ParserClass="Engine.M3UParser")
+	// ParserType=(Type=SPT_PLS,ParserClass="Engine.PLSParser")
+}
+
+static function string GetPackageHash(PlayerController P, string PackName)
+{
+	local Security S;
+	local array<string> Results;
+	
+	S = P.Spawn(class'Engine.Security');
+	S.LocalPerform(2, PackName$".u", "", Results);
+	if(Results.Length == 1) return Results[0];
+}
+
+static function Debug(coerce string S, Actor A)
+{
+	class'zUtil'.static.Debug(S, A);
+}
+
+defaultproperties{
+	Packs(0)=(Pack="Core",Hash="7c56df7e3b1d3ba9ab22bc2409838c5e")
+	Packs(1)=(Pack="Engine",Hash="1972d14c57d05ffdc82c51be76c13d29")
+	Packs(2)=(Pack="Fire",Hash="64ef0e15f9cffcbf367931f69c4c5b46")
+	Packs(3)=(Pack="Editor",Hash="8691b7d6d30f0e8d55aea36f30c5c0f3")
+	Packs(4)=(Pack="IpDrv",Hash="5ca83787542093a1fd90163580022202")
+	Packs(5)=(Pack="UWeb",Hash="6116413e82bb2ac4d33ec4da9c40ce68")
+	Packs(6)=(Pack="GamePlay",Hash="3dd9b1f931e09b6ed9c0596925077e24")
+	Packs(7)=(Pack="UnrealGame",Hash="c3b686458fc25e5b069238ffef56a8bd")
+	Packs(8)=(Pack="GUI2K4",Hash="2f8d1294832ac5f3e4f93ebeabf1f391")
+	Packs(9)=(Pack="UT2k4AssaultFull",Hash="b1beb39b0be7024aabd46b73a4a79eca")
+	Packs(10)=(Pack="UT2k4Assault",Hash="fc5fe8ee346c285e06078516fdf35968")
+	Packs(11)=(Pack="XEffects",Hash="8c7eba552a52f232a10c6e74850f0397")
+	Packs(12)=(Pack="XPickups",Hash="098f23cba3b593074f98a4d2fc514ab6")
+	Packs(13)=(Pack="XGame",Hash="dcd6f59ff5bf6ef1e284f454446ba626")
+	Packs(14)=(Pack="XWeapons",Hash="fca1b41d868d93624556376fbdc56fea")
+	Packs(15)=(Pack="XInterfaceVehicles",Hash="")
+	Packs(16)=(Pack="OnslaughtFull",Hash="ed4a6c9479731fe22ebc3e1f41cda7f6")
+	Packs(17)=(Pack="xVoting",Hash="fd62ff83dbc37cb2ce3d30a7fb37e4ff")
+	Packs(18)=(Pack="BonusPack",Hash="f63df930572a211681fb99e64c90cab2")
+	Packs(19)=(Pack="SkaarjPack",Hash="8e060e901a5c61d8d5f2703814aa351b")
+	Packs(20)=(Pack="SkaarjPack_rc",Hash="efe07099c1454bbc3603bc135b9aaf83")
+	Packs(21)=(Pack="UTClassic",Hash="41c404c2b7d99fdb45c6982fa477b626")
+	Packs(22)=(Pack="Onslaught",Hash="19fe213e4fe93b04f63443fc1dc3947c")
+	Packs(23)=(Pack="XInterface",Hash="122c943b76791512fcb2f70f5130cd48")
+}

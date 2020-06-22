@@ -1,0 +1,37 @@
+function bool AllowCallTimeOut(PlayerController PC){
+	local zLinkedReplicationInfo MyLRI;
+	local int TeamNum, N;
+	local zTeamGameReplicationInfo MyGame;
+	
+	if(zMain(Owner).IsWarmup()) N = 1;
+	else if(PC.IsSpectating()) N = 2;
+	else if(Level.Game.bOverTime) N = 35;
+	else if(Level.Pauser != None){
+		if(Level.Pauser == PC.PlayerReplicationInfo) N = 3;
+		else N = 33;
+	}
+	if(N != 0) return Message(PC, N);
+	
+	MyLRI = class'zLinkedReplicationInfo'.static.Get(PC.PlayerReplicationInfo);
+	//if(Level.Game.bTeamGame || Level.Game.MaxPlayers != 2 || (Level.Game.NumPlayers + Level.Game.NumBots) != 2) return "Timeout can be called only in duel!";
+	MyGame = zTeamGameReplicationInfo(zMain(Owner).MyGame);
+	
+	if(Level.Game.bTeamGame && PC.PlayerReplicationInfo.Team != None){ // TDM
+		TeamNum = PC.PlayerReplicationInfo.Team.TeamIndex;
+		if(MyGame.TeamTimeoutsCount[TeamNum] >= Timeouts) N = 4;
+		else if(!MyLRI.bTeamCaptain) N = 34;
+		if(N != 0) return Message(PC, N);
+		MyGame.TeamTimeoutsCount[TeamNum]++;
+		return True;
+	}
+	
+	if(Level.Game.MaxPlayers != 2 || (Level.Game.NumPlayers + Level.Game.NumBots) != 2) N = 5; // FFA
+	else if(MyLRI.TimeoutCalled >= Timeouts) N = 6;
+	else if(Level.Game.GameReplicationInfo.ElapsedTime == 0 || Level.Game.GameReplicationInfo.RemainingTime == 900) N = 7;
+	else if(!Level.Game.IsInState('MatchInProgress')) N = 8;
+	else if(Level.Game.GameReplicationInfo.RemainingTime == 0 || Level.Game.TimeLimit == 0) N = 9;
+	
+	if(N != 0) return Message(PC, N);
+	MyLRI.TimeoutCalled++;
+	return True;
+}

@@ -1,0 +1,248 @@
+class BrightSkins extends Interaction;
+// todo: заносить обновленных тварей в массив, и перед вызовом
+// dynamicactors проверять может быть мы уже обновили тварь
+// note: техника - это тоже твари :)
+// done: проверять чтоб левые скины не загружались
+//Log: (Karma): Not All Physics Parts Have Graphics Bones!
+//Log: (Karma): Not All Physics Joints Have Graphics Bones!
+
+// JuggMaleABodyA_0B.pcx
+// JuggMaleABodyA_1B.pcx
+//#EXEC TEXTURE IMPORT FILE=Textures\JuggMaleABodyA_0B.pcx
+//#EXEC TEXTURE IMPORT FILE=Textures\JuggMaleABodyA_1B.pcx
+
+//var byte SkinLoaded[2];
+
+struct Boolean{
+	var bool B;
+};
+var Boolean SkinLoaded[2];
+
+var Mesh MyPlayerMesh[2], MySkeletonMesh[2];
+var Material MyBodySkin[2], MyHeadSkin[2]; // 0 = enemy, 1 = team
+var byte Glowing[2];
+var class<xPawnGibGroup> MyGibGroupClass[2];
+var class<SpeciesType> MySpecies[2];
+var string MyRagdollOverride[2];
+var class<xPawnSoundGroup> MySoundGroupClass[2];
+var class<VoicePack> MyVoiceClass[2];
+var string MyVoiceType[2], MyCharacter[2];
+var texture MyTexture[2];
+var float MyEnemyBones[3];
+
+var PlayerController Me;
+var float TimeTick;
+//var byte LastTeamIndex;
+//var KarmaParamsCollision KParams;
+
+event Initialized(){
+//	local int i;
+	Me = ViewportOwner.Actor;
+//	PreLoadSkin(0, class'zMain'.default.EnemySkin);
+//	PreLoadSkin(1, class'zMain'.default.TeamSkin);
+//	for(i = 0; i < 2; i++) if(!IsSkinLoaded(i)) PreLoadSkin(i, FallbackSkin[i]);
+}
+
+exec function TeamSkin(string S){
+	class'zMain'.default.TeamSkin = S;
+	PreLoadSkin(1, class'zMain'.default.TeamSkin);
+}
+exec function EnemySkin(string S){
+	class'zMain'.default.EnemySkin = S;
+	PreLoadSkin(0, class'zMain'.default.EnemySkin);
+}
+
+event Tick(float DeltaTime){
+	local xPawn P;
+	local int MyTeamIndex;
+	if(TimeTick < 0.5) {
+		TimeTick += DeltaTime;
+		return;
+	}
+	TimeTick = 0;
+	P = xPawn(Me.ViewTarget);
+	if(P != None && P.PlayerReplicationInfo != None) MyTeamIndex = P.GetTeamNum();
+	else MyTeamIndex = 1;
+	foreach Me.DynamicActors(class'xPawn', P){
+		// P.IsInState('Dying')
+		if(P == None || P == Me.ViewTarget) continue; // моя тварь
+		//if(P.DrivenVehicle != None) Debug(P.GetHumanReadableName() @ "is on" @ P.DrivenVehicle);
+		if(P.PlayerReplicationInfo == None){
+			P.AmbientGlow = 0; // мертвая тварь, пусть притухнет немного =)
+			continue;
+		}
+		if(MyTeamIndex == 255 || P.GetTeamNum() != MyTeamIndex) UpdateSkin(P, 0);
+		else UpdateSkin(P, 1);
+	}
+	bRequiresTick = False;
+}
+exec function EnemyBones(string S){ // like preload, checking here
+	local array<string> Parts;
+	local byte i;
+	Split(S, "/", Parts);
+	Parts.Length = ArrayCount(MyEnemyBones);
+	for(i = 0; i < Parts.Length; i++) MyEnemyBones[i] = FClamp(float(Parts[i]), 0, 25) / 100.0;
+	class'zMain'.default.EnemyBones = class'zUtil'.static.Implode("/", Parts);
+}
+
+function UpdateEnemyBones(xPawn P){
+	P.SetBoneScale(0, 1 + MyEnemyBones[0], 'lfoot');
+	P.SetBoneScale(1, 1 + MyEnemyBones[1], 'rfoot');
+	P.SetBoneScale(2, 1 + MyEnemyBones[2], 'head');
+}
+
+//function NewUpdateSkin(xPawn P, byte i){
+//	local xUtil.PlayerRecord PlayerRec;
+//	local ConstantColor myConstantColor;
+//	local Combiner myCombiner;
+//	local FinalBlend myFinalBlend;     // material for the mesh skin
+//	local ColorModifier CM;
+//
+//	if(i == 0) PlayerRec = class'xUtil'.static.FindUPLPlayerRecord("Gorge");
+//	else PlayerRec = class'xUtil'.static.FindUPLPlayerRecord("Reinha");
+//	P.Spawn(class'BrightSkin', P);
+//}
+
+function UpdateSkin(xPawn P, byte i){
+//	NewUpdateSkin(P, i);
+//	return;
+	if(!IsSkinLoaded(i) || (P.AmbientGlow == Glowing[i] && P.Skins[0] == MyBodySkin[i])) return;
+	P.LinkMesh(MyPlayerMesh[i]);
+	P.AssignInitialPose();
+//	P.SetDrawType(DT_Mesh);
+//	P.SetDrawScale(1.0);
+//	P.AssignInitialPose();
+//KUpdateRagdollTrilist
+//	P.KParams = None;
+//	P.KParams = KParams;
+
+	P.Skins[0] = MyBodySkin[i];
+	P.Skins[1] = MyHeadSkin[i];
+
+	P.AmbientGlow = Glowing[i];
+	P.bUseLightingFromBase = False;
+	P.bUnlit = False;
+	P.bAcceptsProjectors = False;
+	if(i == 0) UpdateEnemyBones(P); // 0 = enemy
+
+//	P.Texture = MyTexture[i];
+
+	P.SkeletonMesh = MySkeletonMesh[i];
+	P.Species = MySpecies[i];
+	P.RagdollOverride = MyRagdollOverride[i];
+	P.SoundGroupClass = MySoundGroupClass[i];
+	P.GibGroupClass = MyGibGroupClass[i];
+
+//	P.VoiceType = MyVoiceType[i]; // none // dont' work
+//	if(P.PlayerReplicationInfo != None) P.PlayerReplicationInfo.VoiceType = MyVoiceClass[i];
+//	P.VoiceClass = class<TeamVoicePack>(MyVoiceClass[i]); // dont' work
+	// new
+//	if(MySkeletonMesh[i] == MyPlayerMesh[i]) P.bSkeletized = True;
+//	P.bSkeletized = True;
+}
+
+function ParseColors(byte i, string C, out string TeamSuffix){
+	switch(Locs(C)){
+	case "blue":
+		TeamSuffix = "_1";
+		MyTexture[i] = Texture'BlueMarker_t';
+		break;
+	case "red":
+		TeamSuffix = "_0";
+		MyTexture[i] = Texture'RedMarker_t';
+		break;
+	default:
+		TeamSuffix = "";
+	}
+}
+
+final function PreLoadSkin(byte i, string SkinString){
+	local xUtil.PlayerRecord PlayerRec;
+	local string TeamSuffix, BodySkinName, HeadSkinName, SkelName, VoiceType;
+	local bool bBrightSkin, bIsFemale, bFailed;
+	local array<string> A; // 0 - skin, 1 - color, 2  - glow
+	//SkinLoaded[i].B = 0;
+//	Log("PreLoadSkin" @ SkinString @ i);
+	Split(SkinString, "/", A);
+	MyCharacter[i] = A[0];
+	if(!IsDefaultCharacterName(MyCharacter[i])) return;
+	PlayerRec = class'xUtil'.static.FindUPLPlayerRecord( MyCharacter[i] );
+	Glowing[i] = Clamp(byte(A[2]), 0, 254); // 255 - pulse.
+	ParseColors(i, A[1], TeamSuffix);
+	MySpecies[i] = PlayerRec.Species;
+	MyRagdollOverride[i] = PlayerRec.Ragdoll;
+	if(PlayerRec.Skeleton != "") MySkeletonMesh[i] = Mesh(DynamicLoadObject(PlayerRec.Skeleton, class'Mesh'));
+	bIsFemale = (PlayerRec.Sex ~= "Female");
+	if(bIsFemale){
+		SkelName = MySpecies[i].default.FemaleSkeleton;
+		MySoundGroupClass[i] = class<xPawnSoundGroup>(DynamicLoadObject(MySpecies[i].default.FemaleSoundGroup, class'Class'));
+		//Log("---MySoundGroupClass");
+	}else{
+		SkelName = MySpecies[i].default.MaleSkeleton;
+		MySoundGroupClass[i] = class<xPawnSoundGroup>(DynamicLoadObject(MySpecies[i].default.MaleSoundGroup, class'Class'));
+		//Log("----MySoundGroupClass");
+	}
+	if(MySkeletonMesh[i] == None) MySkeletonMesh[i] = Mesh(DynamicLoadObject(SkelName, class'Mesh'));
+	VoiceType = PlayerRec.VoiceClassName;
+	if(VoiceType != "") MyVoiceClass[i] = class<VoicePack>(DynamicLoadObject(VoiceType, class'Class'));
+	if(MyVoiceClass[i] == None){
+		VoiceType = class'SpeciesType'.static.GetVoiceType(bIsFemale, Me.Level);
+		MyVoiceClass[i] = class<VoicePack>(DynamicLoadObject(VoiceType, class'Class'));
+		//Log("---MyVoiceClass");
+	}
+	MyVoiceType[i] = VoiceType;
+	MyPlayerMesh[i] = Mesh(DynamicLoadObject(PlayerRec.MeshName, class'Mesh'));
+	if(MyPlayerMesh[i] == None) bFailed = True;
+	BodySkinName = PlayerRec.BodySkinName $ TeamSuffix;
+	bBrightSkin = class'DMMutator'.default.bBrightSkins && Left(BodySkinName, 12) ~= "PlayerSkins.";
+	if(bBrightSkin && TeamSuffix != "") BodySkinName = "Bright" $ BodySkinName $ "B";
+	MyBodySkin[i] = Material(DynamicLoadObject(BodySkinName, class'Material'));
+	if(MyBodySkin[i] == None) bFailed = True;
+	HeadSkinName = PlayerRec.FaceSkinName;
+	if(PlayerRec.TeamFace) HeadSkinName $= TeamSuffix;
+	MyHeadSkin[i] = Material(DynamicLoadObject(HeadSkinName, class'Material'));
+	if(MyHeadSkin[i] == None) bFailed = True;
+	MyGibGroupClass[i] = class<xPawnGibGroup>(DynamicLoadObject(MySpecies[i].default.GibGroup, class'Class'));
+	if(MyGibGroupClass[i] == None) bFailed = True;
+	// texture ??? MyTexture[i] = Texture'BlueMarker_t';
+	if(!bFailed) SkinLoaded[i].B = True;
+}
+
+function bool IsSkinLoaded(byte i){
+	return (SkinLoaded[i].B);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Me);
+}
+
+exec function UpdateSkins(){
+	bRequiresTick = True;
+}
+
+event NotifyLevelChange(){
+	Master.RemoveInteraction(Self);
+}
+
+function bool IsDefaultCharacterName(string CharacterName){
+	local string S;
+	local array<string> Names;
+	local int i;
+	S = "Abaddon Ambrosia Annika Arclite Aryss Asp Axon Azure Baird Barktooth BlackJack Brock";
+	S @= "Brutalis Cannonball Cathode ClanLord Cleopatra Cobalt Corrosion Cyclops Damarus Diva";
+	S @= "Divisor Domina Dominator Drekorig Enigma Faraleth Jakob Fate Frostbite Garrett Gkublok";
+	S @= "Gorge Greith Guardian Harlequin Horus Hyena Jakob Kaela Kane Karag Komek Kraagesh Kragoth";
+	S @= "Lauren Lilith Malcolm Makreth Mandible Matrix Mekkor Memphis Mokara Motig Mr.Crow Nebri";
+	S @= "Ophelia Othello Outlaw Prism Rae Rapier Ravage Reinha Remus Renegade Riker Roc Romulus";
+	S @= "Rylisa Sapphire Scarab Satin Selig Siren Skakruk Skrilax Subversa Syzygy Tamika Thannis";
+	S @= "Torch Thorax Widowmaker Virus Wraith Xan Gaargod";
+	Split(S, " ", Names);
+	for(i = 0; i < Names.Length; i++) if(CharacterName ~= Names[i]) return True;
+	Debug("CharacterName" @ CharacterName @ "is bad!");
+	return False;
+}
+
+defaultproperties{
+	bActive=False
+	bRequiresTick=True
+}

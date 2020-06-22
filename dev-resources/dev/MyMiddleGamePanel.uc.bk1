@@ -1,0 +1,228 @@
+class MyMiddleGamePanel extends MidGamePanel;
+/*	l_ 	GUILabel			lb_	GUIListBox
+	i_ 	GUIImage			li_	GUIList
+	b_	GUIButton			tp_	GUITabPanel
+	t_	GUITitleBar			sp_	GUISplitter
+	c_	GUITabControl		mo_ GUIMultiOptionList
+	p_	GUIPanel
+
+	ch_	moCheckBox
+	co_	moComboBox
+	nu_	moNumericEdit
+	ed_	moEditBox
+	fl_	moFloatEdit
+	sl_ moSlider
+
+		btn = new class'GUIButton';
+		btn.WinLeft = img.WinLeft;
+		btn.WinTop = img.WinTop;
+		btn.WinWidth = img.WinWidth;
+		btn.WinHeight = img.WinHeight;
+		btn.RenderWeight = 0.5;
+		btn.OnHover = ShowPlayerDetails;
+		btn.StyleName = "NoBackground";
+		btn.Tag = i;
+		btn.bBoundToParent = true;
+		AppendComponent(btn, true);
+
+		img2 = new class'GUIImage';
+		img2.WinLeft = img.WinLeft+0.00125;
+		img2.WinTop = img.WinTop+0.008;
+		img2.WinWidth = img.WinWidth-0.0025;
+		img2.WinHeight = img.WinHeight-0.015;
+		img2.Image = PR.Portrait;
+		img2.ImageStyle = ISTY_Scaled;
+		img2.RenderWeight = 0.12;
+		img2.Hint = PR.DefaultName;
+		img2.ImageRenderStyle = MSTY_Alpha;
+		img2.ImageColor.A = 255;
+		img2.bBoundToParent = true;
+
+	
+	*/
+	
+
+// разделы: хитсаунды, тимоверлей, хад и остальное
+//var automated GUISectionBackground sb_Hitsounds, sb_TeamOverlay, sb_Other;
+//var automated GUIMultiOptionList mo_Hitsounds, mo_TeamOverlay, mo_Other;
+
+// hitsounds
+//var automated moCheckBox ch_HitSoundsEnabled;
+//var automated moComboBox co_HitSoundsType;
+//var automated moSlider sl_HitSoundsVolume;
+
+//function InitPanel(){}
+
+function TestCreateGUI2(){
+	local GUIImage img;
+	local GUISectionBackground sbg;
+	local GUIButton btn;
+		
+		btn = new class'GUIButton';
+		btn.StyleName = "NoBackground";
+		btn.bFocusOnWatch = true;
+		btn.WinHeight = 0.5;
+		btn.WinWidth = 0.5;
+		btn.WinTop = 0.1;
+		btn.WinLeft = 0.2;
+		btn.tag = 1;
+		btn.Hint = "Start";
+		btn.RenderWeight = 0.4;
+		btn.TabOrder = 1;
+		AppendComponent(btn, true);
+
+		sbg = new class'AltSectionBackground';
+		sbg.WinHeight = 0.5;
+		sbg.WinWidth = 0.8;
+		sbg.WinTop = 0.2;
+		sbg.WinLeft = 0.2;
+		sbg.RenderWeight = 0.1;
+		sbg.Caption = "AltSectionBackground";
+		AppendComponent(sbg, true);
+
+		img = new class'GUIImage';
+		img.RenderWeight = 0.17;
+		AppendComponent(img, true);
+}
+
+function TestCreateGUI(){
+	local GUISectionBackground SB;
+	local moCheckBox CB;
+	local moSlider SL;
+	local int i;
+	Debug("InitPanel" @ "MyButton" @ MyButton);
+	SB = new class'GUISectionBackground';
+//	SB.WinHeight = 0.5;
+//	SB.WinWidth = 0.8;
+//	SB.WinTop = 0.2;
+//	SB.WinLeft = 0.2;
+	SB.RenderWeight = 0.2;
+	SB.Caption = "GUISectionBackground";
+	SB.bBoundToParent = True;
+	SB.bScaleToParent = True;
+	SB.bRemapStack = False;
+	SB.SetPosition(0.1, 0.1, 0.8, 0.8);
+	//AppendComponent(SB, true);
+	
+//	for(i = 0; i < 4; i++){
+//		CB = new class'moCheckBox';
+//		CB.Caption = "moCheckBox" @ i;
+//		CB.bBoundToParent = True;
+//		CB.bScaleToParent = True;
+//		CB.SetPosition(0.1, 0.1 + i * 0.05, 1, 0.3);
+//		//AppendComponent(CB, True);
+//		//SB.AlignStack[i] = CB;
+//		//SB.ManageComponent(CB);
+//	}
+
+	for(i = 0; i < 4; i++){
+		SL = new class'moSlider';
+		SL.Caption = "moSlider" @ i;
+		SL.bBoundToParent = True;
+		SL.bScaleToParent = True;
+		SL.MinValue = 0;
+		SL.MaxValue = 2;
+		SL.SetPosition(0.1, 0.1 + i * 0.05, 1, 0.3);
+		
+		//AppendComponent(CB, True);
+		SB.AlignStack[i] = SL;
+		//SB.ManageComponent(CB);
+	}
+	
+	AppendComponent(SB, True);
+	//RemapComponents();
+}
+
+function bool OnPreDraw(Canvas C){
+	Debug("OnPreDraw");
+}
+
+//exec function test23(){
+//	local string S;
+//	S $= "T:" @ sb_Hitsounds.WinTop;
+//	S $= "L:" @ sb_Hitsounds.ActualLeft();
+//	S $= "H:" @ sb_Hitsounds.ActualHeight();
+//	S $= "W:" @ sb_Hitsounds.ActualWidth();
+//	Debug(S);
+//	
+//}
+
+function OnShow(){
+	Debug("OnShow");
+}
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Debug("InitComponent" @ MyController @ MyOwner);
+	Super.InitComponent(MyController, MyOwner);
+	TestCreateGUI();
+	//TestCreateGUI2();
+	
+//	moComboBox(mo_Hitsounds.Elements[1]).AddItem("1");
+//	moComboBox(mo_Hitsounds.Elements[1]).AddItem("2");
+//	
+//	moSlider(mo_Hitsounds.Elements[2]).MinValue = 0;
+//	moSlider(mo_Hitsounds.Elements[2]).MaxValue = 2;
+//	
+//	
+//	sb_Hitsounds.ManageComponent(mo_Hitsounds);
+}
+
+function OnLoadINI(GUIComponent C, string S){
+	Debug("OnLoadINI" @ C @ S);
+}
+function string OnSaveINI(GUIComponent C){
+	Debug("OnSaveINI" @ C);
+}
+
+function InternalOnChange(GUIComponent Sender){
+	Debug("InternalOnChange" @ Sender);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{
+	IniOption="@Internal"
+//	bFillHeight=True
+//
+//	Begin Object class=GUISectionBackground Name=Background2
+//		Caption="Hitsounds"
+//		WinWidth=0.8
+//		WinHeight=0.8
+//		WinLeft=0.0
+//		WinTop=0.0
+//		bScaleToParent=True
+//		bBoundToParent=True
+//	End Object
+//	sb_Hitsounds=Background2
+//	//sb_TeamOverlay=Background2
+//	//sb_Other=Background2
+//	
+//	Begin Object class=moCheckBox Name=chHitSoundsEnabled
+//		Caption="Enable Hitsounds"
+//		End Object
+//		//ch_HitSoundsEnabled=chHitSoundsEnabled
+//	Begin Object class=moComboBox Name=coHitSoundsType
+//		Caption="xxx"
+//		End Object
+//		//co_HitSoundsType=coHitSoundsType
+//	Begin Object class=moSlider Name=slHitSoundsVolume
+//		Caption="slHitSoundsVolume"
+//		End Object
+//		//sl_HitSoundsVolume=slHitSoundsVolume
+//		
+//	
+//	Begin Object class=GUIMultiOptionList Name=moList
+//		NumColumns=1
+//		ColumnWidth=0.8
+//		bVisibleWhenEmpty=True
+//		bAllowEmptyItems=True
+//		Elements(0)=chHitSoundsEnabled
+//		Elements(1)=coHitSoundsType
+//		Elements(2)=slHitSoundsVolume
+//	End Object
+//	mo_Hitsounds=moList
+	//mo_TeamOverlay=moList
+	//mo_Other=moList
+}

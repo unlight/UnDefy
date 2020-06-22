@@ -1,0 +1,37 @@
+class Broadcaster extends MyBroadcastHandler;
+
+function bool IsMyMessage(PlayerController P, class<LocalMessage> Message, PlayerReplicationInfo R1){
+	return P.PlayerReplicationInfo == R1 && IsGameMessage(Message, R1);
+}
+
+function BroadcastLocalized(Actor Sender, PlayerController P, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(NextBroadcastHandler != None) NextBroadcastHandler.BroadcastLocalized(Sender, P, Message, N, R1, R2, O);
+	else P.ReceiveLocalizedMessage(Message, N, R1, R2, O);
+}
+
+//function BroadcastLocalized(Actor Sender, PlayerController P, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+//	if(N == 3 && TeamGame(Sender) != None && IsMyMessage(P, Message, R1)){
+//		zMain(Owner).GameRules.GetLRI(R1).TeamChanged();
+//	}
+//	else if(N == 14 && Sender == P && IsGameMessage(Message, R1)){
+//		zMain(Owner).GameRules.GetLRI(R1).BecameSpectator();
+//	}
+//
+//	if(NextBroadcastHandler != None) NextBroadcastHandler.BroadcastLocalized(Sender, P, Message, N, R1, R2, O);
+//	else P.ReceiveLocalizedMessage(Message, N, R1, R2, O);
+//}
+
+function bool AcceptBroadcastLocalized(PlayerController P, Actor Sender, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(N == 3 && TeamGame(Sender) != None && IsMyMessage(P, Message, R1)){
+		zMain(Owner).GameRules.GetLRI(R1).TeamChanged();
+	}
+	//else if(N == 14 && PlayerController(Sender) != None && IsMyMessage(PlayerController(Sender), Message, R1)) zMain(Owner).GameRules.GetLRI(R1).BecameSpectator();
+	else if(N == 14 && Sender == P && IsGameMessage(Message, R1)){
+		zMain(Owner).GameRules.GetLRI(R1).BecameSpectator();
+	}else if(N == 1){
+		
+	}
+	return Super.AcceptBroadcastLocalized(P, Sender, Message, N, R1, R2, O);
+}
+
+defaultproperties{}

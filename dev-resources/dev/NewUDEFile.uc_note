@@ -1,0 +1,25 @@
+Canvas.StrLen("Test", XL, YL);
+
+BoxWidth = 0.9375 * Canvas.ClipX;
+BoxXPos = 0.5 * (Canvas.ClipX - BoxWidth);
+
+NameXPos = BoxXPos + 0.0625 * BoxWidth;
+BoxSpaceY = 0.25 * YL;
+
+PlayerBoxSizeY = 1.5 * YL;
+if ( PlayerCount > (Canvas.ClipY - 1.5 * HeadFoot)/(PlayerBoxSizeY + BoxSpaceY) ) PlayerBoxSizeY = 1.25 * YL;
+if ( PlayerCount > (Canvas.ClipY - 1.5 * HeadFoot)/(PlayerBoxSizeY + BoxSpaceY) ) PlayerBoxSizeY = 1.125 * YL;
+if ( PlayerCount > (Canvas.ClipY - HeadFoot)/(PlayerBoxSizeY + BoxSpaceY) ) PlayerBoxSizeY = 1.125 * YL;
+if ( (Canvas.ClipY >= 768) && (PlayerCount > (Canvas.ClipY - HeadFoot)/(PlayerBoxSizeY + BoxSpaceY)) ) PlayerBoxSizeY = 1.125 * YL;
+PlayerBoxSizeY = FClamp((1+(Canvas.ClipY - 0.67 * MessageFoot))/PlayerCount - BoxSpaceY, PlayerBoxSizeY, MaxScaling * YL);
+
+HeaderOffsetY = 3 * YL;
+
+BoxTextOffsetY = HeaderOffsetY + 0.5 * (PlayerBoxSizeY - YL);
+
+for ( i=0; i<PlayerCount; i++ )
+	if ( i != OwnerOffset )
+	{
+		Canvas.SetPos(NameXPos, (PlayerBoxSizeY + BoxSpaceY)*i + BoxTextOffsetY);
+		Canvas.DrawText(playername[i],true);
+	}

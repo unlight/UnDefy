@@ -1,0 +1,15 @@
+//function string NearestPickup(vector V){
+//	local float MinDistance, Distance;
+//	local byte i;
+//	local string S;
+//	MinDistance = 52.5 * 30;
+//	for(i = 0; i < MyPickups.Length; i++){
+//		if(V == MyPickups[i].Pickup.Location) continue;
+//		Distance = VSize(V - MyPickups[i].Pickup.Location);
+//		if(Distance > MinDistance) continue;
+//		MinDistance = Distance;
+//		S = MyPickups[i].PickupName;
+//	}
+//	if(S != "") S = Repl("(%P)", "%P", S);
+//	return S;
+//}

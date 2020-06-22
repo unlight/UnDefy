@@ -1,0 +1,75 @@
+	Begin Object Class=GUITabControl Name=GUITabControl1
+		bFillSpace=True
+		bDockPanels=True
+		TabHeight=0.037500
+		BackgroundStyleName="TabBackground"
+		WinTop=0.059026
+		WinLeft=0.012500
+		WinWidth=0.974999
+		WinHeight=0.044644
+		bBoundToParent=True
+		bScaleToParent=True
+		bAcceptsInput=True
+		bInit=False
+		//OnActivate=GUITabControl.InternalOnActivate
+		//OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object
+    TabControl=GUITabControl1
+
+Begin Object Class=GUITabControl Name=GUITabControl
+        bFillSpace=True
+        bDockPanels=True
+        TabHeight=0.037500
+        BackgroundStyleName="TabBackground"
+        Controls(0)=MyTabPanelA'Package.MyTabPanelA'
+        Controls(1)=MyTabPanelB'Package.MyTabPanelB'
+        WinTop=0.007028
+        WinLeft=0.012500
+        WinWidth=0.974999
+        WinHeight=0.044644
+        bBoundToParent=True
+        bScaleToParent=True
+        bAcceptsInput=True
+        bInit=False
+        OnActivate=GUITabControl.InternalOnActivate
+        OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object
+
+
+    Begin Object Class=GUITabControl Name=GUITabControl
+        bFillSpace=True
+        bDockPanels=True
+        TabHeight=0.037500
+        BackgroundStyleName="TabBackground"
+        Controls(0)=MyTabPanelA'Package.MyTabPanelA'
+        Controls(1)=MyTabPanelB'Package.MyTabPanelB'
+        WinTop=0.041733
+        WinLeft=0.013874
+        WinWidth=0.969167
+        WinHeight=0.911362
+        bBoundToParent=True
+        bScaleToParent=True
+        bAcceptsInput=True
+        bInit=False
+        OnActivate=GUITabControl.InternalOnActivate
+        OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object
+----------------------------------
+    Begin Object Class=GUITabControl Name=GUITabControl
+        bFillSpace=True
+        bDockPanels=True
+        TabHeight=0.037500
+        BackgroundStyleName="TabBackground"
+        Controls(0)=MyTabPanelA'Package.MyTabPanelA'
+
+        Controls(1)=MyTabPanelB'Package.MyTabPanelB'
+
+        WinTop=0.041733
+        WinHeight=0.917784
+        bBoundToParent=True
+        bScaleToParent=True
+        bAcceptsInput=True
+        bInit=False
+        OnActivate=GUITabControl.InternalOnActivate
+        OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object

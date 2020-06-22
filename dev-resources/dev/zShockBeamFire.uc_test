@@ -1,0 +1,17 @@
+class zShockBeamFire extends ShockBeamFire;
+
+function DoFireEffect(){
+	Debog("DoFireEffect");
+	Super.DoFireEffect();
+}
+
+function DoTrace(Vector Start, Rotator Dir){
+	Debog("DoTrace" @ Start @ Dir);
+	Super.DoTrace(Start, Dir);
+}
+
+simulated function Debog(coerce string S){
+	class'zUtil'.static.Debog(S, Self);
+}
+
+defaultproperties{}

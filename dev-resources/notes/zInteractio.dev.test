@@ -1,0 +1,137 @@
+//===================
+//exec function hs(string S){
+//	Me.MyHUD.HudScale = float(S);
+//}
+//exec function res(){
+//	Debug(GUIController(Me.Player.GUIController).ResX @ "@" @ GUIController(Me.Player.GUIController).ResY);
+//}
+//
+//
+//exec function TimerPos(string SX, string SY){
+//	local HudCDeathMatch H;
+//	local EDrawPivot Pivot;
+//	local int i;
+//	Debug("TimerPos" @ float(SX) @ float(SY));
+//	H = HudCDeathMatch(Me.MyHUD);
+//	switch(0){
+//		case 0: Pivot = DP_UpperLeft; break;
+//		case 1: Pivot = DP_UpperMiddle; break;
+//		case 2: Pivot = DP_UpperRight; break;
+//		case 3: Pivot = DP_MiddleRight; break;
+//		case 4: Pivot = DP_LowerRight; break;
+//		case 5: Pivot = DP_LowerMiddle; break;
+//		case 6: Pivot = DP_LowerLeft; break;
+//		case 7: Pivot = DP_MiddleLeft; break;
+//		case 8: Pivot = DP_MiddleMiddle; break;
+//	}
+//	for(i = 0; i < 2; i++) SetWidget(H.TimerDigitSpacer[i], Pivot, float(SX), float(SY));
+//	SetNumWidget(H.TimerHours, Pivot, float(SX), float(SY));
+//	SetNumWidget(H.TimerMinutes, Pivot, float(SX), float(SY));
+//	SetNumWidget(H.TimerSeconds, Pivot, float(SX), float(SY));
+//	SetWidget(H.TimerBackground, Pivot, float(SX), float(SY));
+//	//SetWidget(H.TimerBackgroundDisc, Pivot, float(SX), float(SY));
+//	//SetWidget(H.TimerIcon, Pivot, float(SX), float(SY));
+//}
+//
+//exec function TimerPosb(string SX, string SY){
+//	HudCDeathMatch(Me.MyHUD).TimerBackgroundDisc.PosX = float(SX);
+//	HudCDeathMatch(Me.MyHUD).TimerBackgroundDisc.PosY = float(SY);
+//	HudCDeathMatch(Me.MyHUD).TimerIcon.PosX = float(SX);
+//	HudCDeathMatch(Me.MyHUD).TimerIcon.PosY = float(SY);
+//}
+//
+//exec function TPos(int E){
+//	local float X, Y;
+//	local EDrawPivot Pivot;
+//	switch(E){
+//		case 0: Pivot = DP_UpperLeft; break;
+//		case 1: Pivot = DP_UpperMiddle; break;
+//		case 2: Pivot = DP_UpperRight; break;
+//		case 3: Pivot = DP_MiddleRight; break;
+//		case 4: Pivot = DP_LowerRight; break;
+//		case 5: Pivot = DP_LowerMiddle; break;
+//		case 6: Pivot = DP_LowerLeft; break;
+//		case 7: Pivot = DP_MiddleLeft; break;
+//		case 8: Pivot = DP_MiddleMiddle; break;
+//	}
+//	Debug("Pivot" @ GetEnum(enum'EDrawPivot', E));
+//	//SetWidget(HudCDeathMatch(Me.myHUD).TimerBackgroundDisc, Pivot);
+//}
+//
+//exec function setpos(string X1, string Y1){
+//	HudCDeathMatch(Me.myHUD).TimerBackgroundDisc.PosX = float(X1);
+//	HudCDeathMatch(Me.myHUD).TimerBackgroundDisc.PosY = float(Y1);
+//}
+//
+//exec function SetNumWidget(out HudBase.NumericWidget W, EDrawPivot P, float X, float Y){
+//	if(P != DP_UpperLeft) W.DrawPivot = P;
+//	W.PosX = X;
+//	W.PosY = Y;
+//
+//}
+//exec function SetWidget(out HudBase.SpriteWidget W, EDrawPivot P, float X, float Y){
+//	if(P != DP_UpperLeft) W.DrawPivot = P;
+//	W.PosX = X;
+//	W.PosY = Y;
+//
+//}
+//
+//exec function IncFont(int i){
+//	local zLocalStats zLocalStats;
+//	foreach Me.DynamicActors(class'zLocalStats', zLocalStats) if(zLocalStats.PlayerOwner == Me) break;
+//	zLocalStats.FontHack = i;
+//	Debug("FontHack = " @ i @ zLocalStats.PlayerOwner.GetHumanReadableName());
+//}
+//function int GetHits(class<Weapon> W){
+//	local string DeleteMe;
+//	local int i;
+//	for(i = 0; i < LinkedReplicationInfo.GivenDamage.Length; i++){
+//		if(LinkedReplicationInfo.GivenDamage[i].Weapon == W) return LinkedReplicationInfo.GivenDamage[i].Hits;
+//	}
+//}
+//function string getAcc(coerce float Hits, coerce float Fired){
+//	local string DeleteMe;
+//	if(Hits != 0) return Left(Hits * 100.0 / Fired, 4) $ "%";
+//	return "0.0%";
+//}
+//exec event acc(){
+//	local int i, Hits;
+//	local string DeleteMe;
+//	local string S;
+//	LinkedReplicationInfo.CalculateAmmo(True);
+//	for(i = 0; i < LinkedReplicationInfo.MyWeapons.Length; i++){
+//		//if(LinkedReplicationInfo.MyWeapons[i].Fired == 0) continue;
+//		Hits = GetHits( LinkedReplicationInfo.MyWeapons[i].Weapon );
+//		S = "^3" $ LinkedReplicationInfo.MyWeapons[i].Weapon.static.StaticItemName() $ ":";
+//		S @= "^8Fired:^5" @ LinkedReplicationInfo.MyWeapons[i].Fired;
+//		S @= "^8Hits:^5" @ Hits;
+//		S @= "^8Accuracy:^3" @ getAcc(Hits, LinkedReplicationInfo.MyWeapons[i].Fired);
+//		F.ConsoleMessage(Me, S);
+//	}
+//}
+//===============================
+//exec function FakeTalk(int i){
+//	local Pawn Pawn;
+//	local PlayerReplicationInfo P;
+//	foreach Me.DynamicActors(class'Pawn', Pawn){
+//		P = Pawn.PlayerReplicationInfo;
+//		if(P.bBot){
+//			class'zLinkedReplicationInfo'.static.Get(P).ServerSetTalking(i);
+//			break;
+//		}
+//		
+//	}
+//}
+//exec function FakeTalk2(int i){
+//	local Pawn Pawn;
+//	local PlayerReplicationInfo P;
+//	foreach Me.DynamicActors(class'Pawn', Pawn){
+//		P = Pawn.PlayerReplicationInfo;
+//		if(P != None && P.bBot){
+//			Debug("FakeTalk" @ i @ P.GetHumanReadableName());
+//			class'zLinkedReplicationInfo'.static.Get(P).ServerSetTalking(i);
+//			break;
+//		}
+//	}
+//}
+//================================

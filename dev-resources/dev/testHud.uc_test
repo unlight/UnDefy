@@ -1,0 +1,14 @@
+class testHud extends HudCDeathMatch;
+
+exec function test3(){
+	local int i;
+	for(i = 0; i < ArrayCount(LocalMessages); i++){
+		if(LocalMessages[i].Message != None) Debug(LocalMessages[i].Message);
+	}
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{}

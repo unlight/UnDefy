@@ -1,0 +1,28 @@
+class zGameReplicationInfo extends ReplicationInfo;
+
+// todo: здесь можно замутить проверку на чит
+// избавится от дурацких слов типа Allow и Enable, лучше bServer_
+
+var bool bAllowTeamOverlay;
+var bool bAllowBrightSkins;
+var zGameRules GameRules;
+var byte ForceRespawnTime;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) bAllowTeamOverlay, bAllowBrightSkins, ForceRespawnTime;
+}
+
+event PostBeginPlay(){
+	bAllowTeamOverlay = Level.Game.bTeamGame && zMain(Owner).bAllowTeamOverlay;
+	bAllowBrightSkins = zMain(Owner).bAllowBrightSkins;
+	ForceRespawnTime = zMain(Owner).ForceRespawnTime;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	NetUpdateFrequency=1
+	//bNetTemporary=True // пока так, но лучше через RemoteRole
+}

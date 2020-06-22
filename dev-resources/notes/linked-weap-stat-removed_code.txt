@@ -1,0 +1,168 @@
+//function UpdateDamage(out array<DamageInfo> DamageInfoArray, class<DamageType> DamageType, int Damage){
+//	local DamageInfo LocalDamageInfo;
+//	local int i;
+//	i = DamageInfoArray.Length - 1;
+//	if(i != -1 && DamageInfoArray[i].Type == DamageType){
+//		DamageInfoArray[i].Value += Damage;
+//		DamageInfoArray[i].Hits += 1;
+//		return;
+//	}
+//	LocalDamageInfo.Type = DamageType;
+//	LocalDamageInfo.Value = Damage;
+//	LocalDamageInfo.Hits = 1;
+//	DamageInfoArray[DamageInfoArray.Length] = LocalDamageInfo;
+//}
+//function GiveDamage(class<DamageType> DamageType, int Damage){
+//	UpdateDamage(Given, DamageType, Damage);
+//}
+//function ReceiveDamage(class<DamageType> DamageType, int Damage){
+//	UpdateDamage(Received, DamageType, Damage);
+//}
+// ================================================================
+//function Pickup(Pickup P){
+//	local WeaponPickup WP;
+//	WP = WeaponPickup(P);
+//	if(WP == None) return;
+//	
+//}
+//
+//function int GetAmmoIdByClass(class<Ammunition> Ammo, optional out class<Weapon> Weapon){
+//	local int i;
+//	for(i = 0; i < MyAmmunition.Length; i++)
+//		if(MyAmmunition[i].Ammo == Ammo){
+//			return i;
+//		}
+//	return i;
+//}
+//function int GetAmmoIdByWeapon(class<Weapon> Weapon, optional out class<Ammunition> Ammo){
+//	local int i;
+//	for(i = 0; i < MyAmmunition.Length; i++)
+//		if(MyAmmunition[i].Weapon == Weapon){
+//			Ammo = Weapon.default.AmmoClass[0];
+//			return i;
+//		}
+//	return i;
+//}
+//function int GetCurrentAmmo(class<Weapon> Weapon, class<Ammunition> Ammo){
+//	local Inventory Inv;
+//	for(Inv = Controller(Owner).Pawn.Inventory; Inv != None; Inv = Inv.Inventory){
+//		switch(Inv.Class){
+//			case Weapon: return Weapon(Inv).AmmoAmount(0);
+//			case Ammo: return Ammunition(Inv).AmmoAmount;
+//		}
+//	}
+//}
+//
+//function ReCountAmmoWeapon(Pickup Item){
+//	local WeaponPickup P;
+//	local int Id;
+//	P = WeaponPickup(Item);
+//	Id = GetAmmoIdByWeapon( class<Weapon>(P.InventoryType) );
+//	if(Id == MyAmmunition.Length){
+//		MyAmmunition.Length = Id + 1;
+//	}
+//	MyAmmunition[Id].Ammo = class<Weapon>(P.InventoryType).default.AmmoClass[0];
+//	MyAmmunition[Id].Weapon = class<Weapon>(P.InventoryType);
+//	MyAmmunition[Id].Taken = MyAmmunition[Id].Ammo.default.InitialAmount;
+//	MyAmmunition[Id].Fired += MyAmmunition[Id].Taken - GetCurrentAmmo(MyAmmunition[Id].Weapon, MyAmmunition[Id].Ammo);
+//	Debug(MyAmmunition[Id].Weapon @ "Fired:" @ MyAmmunition[Id].Fired @ "Taken:" @ MyAmmunition[Id].Taken);
+//	MyAmmunition[Id].Taken = 0;
+//}
+//
+//// Weapon(P).AmmoPickupClass
+//// bRecountAmmo in Tick
+//function ReCountAmmo(Pickup Item){ // что-то поднял
+//	local int Id, Taken;
+//	local MyAmmo MA;
+//	local class<Inventory> ItemClass;
+//	ItemClass = Item.InventoryType;
+//	if(WeaponPickup(Item) != None){
+//		//Id = GetAmmoIdByWeapon(class<Weapon>(ItemClass));
+//		MA.Weapon = class<Weapon>(ItemClass);
+//		Taken = WeaponPickup(Item).AmmoAmount[0];
+//	}else if(Ammo(Item) != None){
+//		//Id = GetAmmoIdByClass(class<Ammunition>(Ammo(Item).InventoryType), None);
+//		Taken = Ammo(Item).AmmoAmount;
+//	}else return;
+//	if(Id != MyAmmunition.Length){
+//		MyAmmunition[Id].Fired = MyAmmunition[Id].Taken - GetCurrentAmmo(MyAmmunition[Id].Weapon, MyAmmunition[Id].Ammo);
+//		//MyAmmunition[Id].Fired += GetCurrentAmmo(class<Weapon>(ItemClass), class<Ammunition>(ItemClass))
+//		MyAmmunition[Id].Taken = Taken;
+//		
+//		return;
+//	}
+//	Debug("ReCountAmmo: MyAmmunition new id" @ Id);
+//	MyAmmunition.Length = Id + 1;
+//	MA.Taken = Taken;
+//	MyAmmunition[Id] = MA;
+//}
+//
+//function ReCountAllAmmo(){ // подсчитываем когда игрок умирает (set taken = 0)
+//	local Inventory Inv;
+//	local int i, Count, Id, CurrentAmmo;
+//	local bool bFound, bWeapon, bAmmunition;
+//	local Weapon Weapon;
+//	local Ammunition Ammunition;
+//	local MyAmmo LocMyAmmo;
+//	Debug("ReCountAllAmmo" @ Controller(Owner).Pawn);
+//	for(i = 0; i < MyAmmunition.Length; i++){
+//		//MyAmmunition[i].Fired = MyAmmunition[i].Taken - GetCurrentAmmo(MyAmmunition[i].Weapon, MyAmmunition[i].Ammo);
+//		class'zUtil'.static.ConsoleMessage(PlayerController(Owner), "Fired:" @ MyAmmunition[i].Fired @ MyAmmunition[i].Weapon, True);
+//		MyAmmunition[i].Taken = 0;
+//	}
+//}
+//
+//function CountAllAmmo(){ // подсчитываем когда игрок рождается
+//	local Inventory Inv;
+//	local int i, Id, N;
+//	local bool bFound, bWeapon, bAmmunition;
+//	local MyAmmo LocalMyAmmo;
+//	local class<Ammunition> AmmoClass;
+//	local class<Weapon> WeaponClass;
+//	for(Inv = Controller(Owner).Pawn.Inventory; Inv != None; Inv = Inv.Inventory){
+//		//bWeapon = Weapon(Inv) != None;
+//		//bAmmunition = Ammunition(Inv) != None;
+//		//if(Ammunition(Inv) == None || Weapon(Inv) == None) continue;
+//		if( class<Weapon>(Inv.Class) != None) Id = GetAmmoIdByWeapon(class<Weapon>(Inv.Class), AmmoClass);
+//		else if( class<Ammunition>(Inv.Class) != None ) Id = GetAmmoIdByClass(class<Ammunition>(Inv.Class), WeaponClass);
+//		else continue;
+//		if(Id == MyAmmunition.Length){
+//			if(WeaponClass == None) WeaponClass = class<Weapon>(Inv.Class);
+//			MyAmmunition.Length = Id + 1;
+//			MyAmmunition[Id].Ammo = AmmoClass;
+//			MyAmmunition[Id].Weapon = WeaponClass;
+//		}
+//		N = GetCurrentAmmo(MyAmmunition[Id].Weapon, MyAmmunition[i].Ammo);
+//		MyAmmunition[Id].Taken += N;
+//		MyAmmunition[Id].Fired += MyAmmunition[Id].Taken - N;
+//		class'zUtil'.static.ConsoleMessage(PlayerController(Owner), "Id:" @ Id @ "Fired:" @ MyAmmunition[Id].Fired @ "Taken:" @ MyAmmunition[Id].Taken @ MyAmmunition[Id].Weapon, True);
+//		
+//		/*for(i = 0; i < MyAmmunition.Length; i++){
+//			if(Weapon(Inv) != None){
+//				if(MyAmmunition[i].Weapon == Inv.Class){
+//					MyAmmunition[i].Taken = Weapon(Inv).AmmoAmount(0);
+//					//MyAmmunition[i].Fired += MyAmmunition[i].Taken - GetCurrentAmmo(MyAmmunition[i].Weapon, None);
+//					bFound = True;
+//				}
+//			}else if(Ammunition(Inv) != None){
+//				if(MyAmmunition[i].Ammo == Inv.Class){
+//					MyAmmunition[i].Taken = Ammunition(Inv).AmmoAmount;
+//					//MyAmmunition[i].Fired += MyAmmunition[i].Taken - GetCurrentAmmo(None, MyAmmunition[i].Ammo);
+//					bFound = True;
+//				}
+//			}
+//			if(bFound) break;
+//			if(bWeapon){
+//				LocalMyAmmo.Ammo = Weapon(Inv).GetAmmoClass(0);
+//				LocalMyAmmo.Weapon = Weapon(Inv).Class;
+//				LocalMyAmmo.Taken = Weapon(Inv).AmmoAmount(0);
+//				MyAmmunition[MyAmmunition.Length] = LocalMyAmmo;
+//			}else if(bAmmunition){
+//				LocalMyAmmo.Ammo = Ammunition(Inv).Class;
+//				LocalMyAmmo.Taken = Ammunition(Inv).AmmoAmount;
+//				Debug("bAmmunition" @ bAmmunition @ Inv);
+//			}
+//			
+//		}*/
+//	}
+//}

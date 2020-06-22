@@ -1,0 +1,10 @@
+ // check for login menu
+  if ( !bAddedPanel && GUIController(LocalPlayer.Player.GUIController) != None && UT2K4PlayerLoginMenu(GUIController(LocalPlayer.Player.GUIController).ActivePage) != None ) {
+    LoginMenu = UT2K4PlayerLoginMenu(GUIController(LocalPlayer.Player.GUIController).ActivePage);
+    if ( LoginMenu != None ) {
+      Panel = MidGamePanel(LoginMenu.c_Main.AddTabItem(UTPMenuPanel));
+      if ( Panel != None )
+        Panel.ModifiedChatRestriction = LoginMenu.UpdateChatRestriction;
+    }
+    bAddedPanel = True;
+  }

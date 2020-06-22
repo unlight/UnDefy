@@ -1,0 +1,5 @@
+//	DeathMatch(Level.Game).bQuickStart = True; - не имеет значение, т.к. в состо€ини pendingmatch не бываем
+//	DeathMatch(Level.Game).bDelayedStart = False; - если фалш то нельз€ вступить в игру... все врем€ висишь в спеках , после начала игры очень эффективно
+//	DeathMatch(Level.Game).StartupStage = -1; - переписываетс€ игрой
+
+Level.Game.bWaitingToStartMatch = False; - неизвестно...

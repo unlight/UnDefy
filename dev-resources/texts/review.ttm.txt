@@ -1,0 +1,26 @@
+Striking Oil
+Teamplay Tourney Mod is a rare mod that seems to have a captive audience. It received a score of 9.3 by us here at Mod Squad, but the User Rating was 9.6 last time I checked. It's strange to actually see a high score in the user rating as many people have different opinions. Also, this isn't just a few votes that we're talking about, it's 80. Again, this may have changed, but from the date of this review, it was at 80 votes with an overall score of 9.6.
+
+So, what makes the mod so popular? Well, aside from allowing the player to vote for anything (from map changes to kicking players to spawn protection), it allows the server admin to basically have complete control over what is allowed or not allowed in the game. The mod helps to enhance online play by allowing for a lot more customability, and if a server has this mod enabled, the person connecting to the given server won't have to wait a long time to download the mod. It shouldn't take longer than 3 minutes max, and that time is much lower for players with faster connections.
+
+A new mod
+With build 45, TTM enhances itself by adding numerous new features. One of the main new features is the inclusion of the Warm Up. During this period, players can practice for a while until everybody is ready. After everybody is ready, then the frags reset and the game begins anew.
+
+There are a bunch of smaller additions, but I'll just go over several of the major ones. Whenever a vote is initiated, a pop up window is displayed on everybody's HUD, which helps to streamline the voting process. This helps to make it much easier to get people's votes so that important issues, such as kicking somebody or changing maps, will not go by unnoticed.
+
+There is also partial CTF support now. Map restart, map change, and max players are now available for voting when played on the gametype "CTF/TTM by pakman."
+
+Small additions
+The list goes on and on with the additions, so I won't bore you with an entire list of additions and their explanations. I'll just list a few of them that I found to have an impact on gameplay: many new options are available for voting, there are new console commands for changing mouse sensitivity, handness, FOV, and type of crosshair online, new client side options for displaying the details of the player on your crosshair, and you can see what is enabled/disabled on a TTM server. There are a ton more options, but you can play with the mod to see them for yourself.
+
+Fixes
+While there are a number of additions, many bug fixes also abound in TTM. Several minor bugs have been squashed, such as ones that pertain to voting, warm-up, and tweaks to the menu and other parts of the mod. While there wasn't much problems with the mod before, these fixes help to smooth out the mod.
+
+TTM My Way
+TTM allows the server admin to create a UT server based on his/her own rules. This person basically has complete control over what is allowed and what isn't allowed. With the menu, the server admin can customize the server to their content.
+
+If you are just playing on a TTM Server, you won't have to bother with the menu that much. However, you can customize TTM to suit your playing style, but the default configuration should suffice for many people.
+
+Teamplay Tourney Mod is basically the ultimate online mod for server admins. Plus, it helps to extend the server abilities to the people by allowing them to vote to turn options on or off. TTM basically allows the people playing on a server to admin themselves, which helps to ensure a smooth server even if there is no admin present. (Note: UT Bonus Packs 1 & 4 must be installed for TTM to work properly).
+
+-Peter Yu

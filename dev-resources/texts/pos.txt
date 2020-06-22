@@ -1,0 +1,15 @@
+Размеры ALT_BG (высота 100%)
+		WinWidth=0.495889
+		WinHeight=0.95
+		WinLeft=0.010000
+		WinTop=0.010000
+Первый элемент в AltSectionBG
+		WinWidth=0.900000
+		WinHeight=0.078818
+		WinLeft=0.050000
+		WinTop=0.08 (!!!)
+Последний элемент в AltSectionBG
+		WinWidth=0.900000
+		WinHeight=0.078818
+		WinLeft=0.050000
+		WinTop=0.801075 (!!!)

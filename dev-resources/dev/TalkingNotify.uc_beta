@@ -1,0 +1,11 @@
+class TalkingNotify extends zLocalMessage;
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo Talker, optional PlayerReplicationInfo R2, optional Object O){
+	local zLinkedReplicationInfo L1;
+	L1 = class'zLinkedReplicationInfo'.static.Get(P.PlayerReplicationInfo);
+	Debug("Broadcast Talker" @ Talker.GetHumanReadableName() @ N, P);
+	P.Spawn(class'MyIcon', Talker);
+	//L1.TalkingNotify(N, Talker);
+}
+
+defaultproperties{}

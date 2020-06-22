@@ -1,0 +1,96 @@
+class zGameReplicationInfo extends ReplicationInfo;
+// сюда пойдет все то что общее для всех игроков
+// здесь можно замутить апдейтер или голосование
+const MAXPOINTS = 21;
+var(Beacons) vector BeaconsCoordinate[MAXPOINTS];
+var(Beacons) string BeaconsItemName[MAXPOINTS];
+var(Beacons) byte BeaconsCount;
+var PlayerReplicationInfo TeamCaptains[2];
+var float NextUpdateTime; // Team Captains
+var byte TeamTimeoutsCount[2];
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) BeaconsCoordinate, BeaconsItemName, BeaconsCount;
+}
+
+function PostBeginPlay(){
+	SetTimer(1, True); // может заюзать тик?
+}
+
+//event Tick(float F);
+
+function CheckTeamCaptains(){
+	local int Index;
+	if(Level.TimeSeconds < NextUpdateTime) return;
+	NextUpdateTime = Level.TimeSeconds + 2 + FRand();
+	for(Index = 0; Index < 2; Index++) if(TeamCaptains[Index] == None || TeamCaptains[Index].Team == None || TeamCaptains[Index].Team.TeamIndex != Index) SetTeamCaptain(Index);
+}
+
+event Timer(){
+	local Controller C;
+	local zLinkedReplicationInfo Linked;
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		if(xPawn(C.Pawn) == None) continue;
+		Linked = class'zLinkedReplicationInfo'.static.Get(C.PlayerReplicationInfo);
+		if(Linked != None) UpdateOverlayData(Linked, xPawn(C.Pawn));
+	}
+	CheckTeamCaptains();
+}
+
+function UpdateOverlayData(out zLinkedReplicationInfo Linked, xPawn P){
+//	Linked.MyWeapon = C.Pawn.Weapon.GetHumanReadableName();
+	if(P.Weapon != None) Linked.MyWeapon = P.Weapon.InventoryGroup;
+	Linked.MyLocation = P.Location;
+	Linked.MyHealth = P.Health;
+	Linked.MyShield = P.ShieldStrength;
+	Linked.MySmallShield = P.SmallShieldStrength;
+}
+
+// suggestion: если пусто то ставить капитаном, есди он не хочет то пусть сбрасывает полномочия
+event SetTeamCaptain(int TeamNum){
+	local zLinkedReplicationInfo MyLRI;
+	local int i;
+	local PlayerReplicationInfo PRI;
+	if(TeamCaptains[TeamNum] != None){
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(TeamCaptains[TeamNum]);
+		TeamCaptains[TeamNum] = None;
+		MyLRI.bTeamCaptain = False;
+	}
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		PRI = Level.GRI.PRIArray[i];
+		if(PRI.Team == None || PRI.bBot || PRI.Team.TeamIndex != TeamNum) continue;
+		TeamCaptains[TeamNum] = PRI;
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(PRI);
+		MyLRI.bTeamCaptain = True;
+		PlayerController(PRI.Owner).ReceiveLocalizedMessage(class'TeamCaptainMessage', TeamNum);
+		break;
+	}
+}
+
+
+
+auto state StartUp{
+	Begin:
+	GetBeacons();
+}
+
+function GetBeacons(){
+	local BeaconsObject BO;
+	local byte i;
+	BO = new class'BeaconsObject';
+	BO.Initialize(Level.Game);
+	BeaconsCount = BO.BeaconItemNames.Length;
+	if(BeaconsCount > MAXPOINTS) BeaconsCount = MAXPOINTS;
+	for(i = 0; i < BeaconsCount; i++){
+		BeaconsItemName[i] = BO.BeaconItemNames[i];
+		BeaconsCoordinate[i] = BO.BeaconCoordinates[i];
+	}
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	bNetTemporary=True // будет репликация только один раз при создании
+}

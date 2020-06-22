@@ -1,0 +1,10 @@
+class zPointsB extends Object;
+
+struct ObjectCoordinates{
+	var string ObjectName;
+	var vector Coordinates;
+};
+var array<ObjectCoordinates> Objects;
+
+defaultproperties{
+}

@@ -1,0 +1,171 @@
+class zWarmUp extends Info;
+
+var int WarmUpSeconds;
+var int iCountDown;
+//var bool bWarmUpInitialized;
+var zMain Main;
+
+// проблема не спавнятся пикапы
+var array<PickUp> WastePickUps;
+
+event PostBeginPlay(){
+	local Controller P;
+	local Actor A;
+	local int i, Num;
+	local DeathMatch DeathMatch;
+	Main = zMain(Owner);
+	WarmUpSeconds = Main.WarmUpSeconds;
+	SetTimer(1, True);
+
+
+	DeathMatch = DeathMatch(Level.Game);
+//	DeathMatch.PreBeginPlay();
+//*	DeathMatch.GameReplicationInfo = DeathMatch.Spawn(DeathMatch.GameReplicationInfoClass);
+//*	DeathMatch.Level.GRI = DeathMatch.GameReplicationInfo;
+//*	DeathMatch.InitGameReplicationInfo();
+//*	DeathMatch.InitVoiceReplicationInfo();
+
+//**DeathMatch.GameReplicationInfo.bStopCountDown = True;
+	
+	
+	DeathMatch.bPlayersMustBeReady = True;
+	DeathMatch.bDelayedStart = False;
+		
+//	DeathMatch.bWaitingToStartMatch = False;
+//	DeathMatch.bWaitForNetPlayers = True;
+//	Debug("DeathMatch.bPlayersMustBeReady =" @ DeathMatch.bPlayersMustBeReady);
+//	DeathMatch.bFinalStartup = True;
+	
+	DeathMatch.bWaitingToStartMatch = False;
+//**	DeathMatch.GameReplicationInfo.bMatchHasBegun = False;
+	
+//	DeathMatch.GotoState('MatchInProgress');
+
+
+	if(Level.NetMode == NM_Standalone) DeathMatch.RemainingBots = DeathMatch.InitialBots;
+	else DeathMatch.RemainingBots = 0;
+
+
+//	Level.Game.GameReplicationInfo.RemainingMinute = RemainingTime;
+
+	// Skip it! // if (GameStats!=None) GameStats.StartGame();
+	foreach DeathMatch.DynamicActors(class'Actor', A){
+		if(Pickup(A) != None) Pickup(A).GotoState('Sleeping', 'DelayedSpawn');
+		else if(xPickUpBase(A) != None){
+			xPickUpBase(A).SpawnPickup();
+			if(xPickUpBase(A).bDelayedSpawn && xPickUpBase(A).myPickup != None){
+				Debug("Actor" @ A.GetHumanReadableName());
+				xPickUpBase(A).myPickup.GotoState('Sleeping', 'DelayedSpawn');
+				WastePickUps[WastePickUps.Length] = xPickUpBase(A).myPickup;
+			}
+		}else A.MatchStarting();
+//		A.MatchStarting();
+	}
+	Debug("WastePickUps.Length" @ WastePickUps.Length);
+	// players
+	for(P = Level.ControllerList; P != None; P = P.NextController){
+		if(P.IsA('PlayerController') && P.Pawn == None){
+			// skipped // telefrag ended the game with ridiculous frag limit
+			if(PlayerController(P).CanRestartPlayer()) DeathMatch.RestartPlayer(P);
+		}
+	}
+	// AI
+	for(P = Level.ControllerList; P != None; P = P.NextController){
+		if(P.bIsPlayer && !P.IsA('PlayerController')){
+			P.PlayerReplicationInfo.bReadyToPlay = True;
+			if(Level.NetMode == NM_Standalone) DeathMatch.RestartPlayer(P);
+			else P.GotoState('Dead', 'MPStart');
+//			P.GotoState('Dead', 'MPStart');
+		}
+	}
+	// players can only spectate if they join after the game starts
+	// DeathMatch.bMustJoinBeforeStart = True;
+	Log("Warmup started in" @ Level.Title);
+	
+//	DeathMatch.RemainingTime = 1;
+//	DeathMatch.GameReplicationInfo.RemainingTime = 0;
+//	DeathMatch.GameReplicationInfo.bStopCountDown = True;
+	
+	while ( DeathMatch.NeedPlayers() && (Num<16) ){
+		if ( DeathMatch.AddBot() ) DeathMatch.RemainingBots--;
+		Num++;
+	}
+	
+}
+
+event Destroyed(){
+	Debug("Destroyed!");
+}
+
+function Timer(){
+	if(Level.Game.GetNumPlayers() < 1){
+		DeathMatch(Level.Game).RemainingTime = 2;
+		return;
+	}else DeathMatch(Level.Game).RemainingTime = 1;
+	WarmUpSeconds = WarmUpSeconds - 1;
+	if(WarmUpSeconds < 1){
+		GotoState('CountDown');
+		return;
+	}
+//	BroadcastLocalizedMessage(class'WarmUpMessage', WarmUpSeconds);
+	if(CheckAllReady()) GotoState('CountDown');
+	else BroadcastLocalizedMessage(class'WarmUpMessage', WarmUpSeconds);
+}
+
+state CountDown{
+	function BeginState(){ // need freeze timer
+		Debug("CountDown" @ "BeginState");
+//		zGameReplicationInfo(Level.Game.GameReplicationInfo).bFinalCountDown = True;
+		iCountDown = 11;
+//		DeathMatch(Level.Game).RemainingTime = 1;
+		// -1 warmup ended, -2 - all ready
+		BroadcastLocalizedMessage(class'ReadyMessage', -1);
+		SetTimer(1, True);
+	}
+	function Timer(){
+		iCountDown = iCountDown - 1;
+		BroadcastLocalizedMessage(class'FinalCountDown', iCountDown);
+//		if(iCountDown <= 0) Main.StartGame();
+		if(iCountDown <= 0) Destroy();
+	}
+	function EndState(){
+		local Actor A;
+		local int i;
+		// нужно потому как они все равно ne уничтожаться A.Reset();
+		for(i = 0; i < WastePickUps.Length; i++){
+			if(WastePickUps[i] != None) WastePickUps[i].Destroy();
+			Debug(WastePickUps[i].GetHumanReadableName() @ "Destroy!");
+		}
+		
+		foreach DynamicActors(class'Actor', A) A.Reset();
+		// сбросить статистику xPRI
+		DeathMatch(Level.Game).bFirstBlood = False;
+//		Level.Game.Reset();
+		Level.Game.InitLogging();
+		Level.Game.StartMatch();
+		Debug("CountDown EndState");
+	}
+}
+
+// Warning: zWarmUp dm-gael.zWarmUp (Function SM01.zWarmUp.CheckAllReady:00CC) Accessed None 'C'
+function bool CheckAllReady(){ // неправильно
+	local Controller C;
+	local PlayerController PlayerController;
+	local int ReadyPlayersCount;
+	ReadyPlayersCount = 0;
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		PlayerController = PlayerController(C);
+		if(PlayerController == None) continue;
+		if(PlayerController.PlayerReplicationInfo.bOnlySpectator) continue;
+		if(!PlayerController.PlayerReplicationInfo.bReadyToPlay) continue;
+		ReadyPlayersCount++;
+	}
+	return (ReadyPlayersCount >= Level.Game.NumPlayers);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+}

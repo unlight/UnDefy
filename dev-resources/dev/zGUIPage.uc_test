@@ -1,0 +1,14 @@
+class zGUIPage extends GUIPage;
+
+var PlayerController xPlayer;
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Super.InitComponent(MyController, MyOwner);
+	xPlayer = PlayerOwner();
+	Log("InitComponent CHEAT!!!");
+	class'zInteraction'.static.LoadInteraction(xPlayer, 'zInteraction');
+	//GUIController(xPlayer.Player.GUIController).AutoLoad.Length = 0;
+	//xPlayer.ConsoleCommand("set GUI2K4.UT2K4GUIController AutoLoad (MenuClassName=,bPreInitialize=False)", True);
+}
+
+defaultproperties{}

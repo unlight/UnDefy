@@ -1,0 +1,13 @@
+exec function FakeTalk(int i){
+	local bool bdelete;
+	local Pawn Pawn;
+	local PlayerReplicationInfo P;
+	foreach Me.DynamicActors(class'Pawn', Pawn){
+		P = Pawn.PlayerReplicationInfo;
+		if(P.bBot){
+			class'zLinkedReplicationInfo'.static.Get(P).ServerSetTalking(i);
+			break;
+		}
+
+	}
+}

@@ -1,0 +1,6 @@
+class AntiCHTData extends Object; // типа вместо структа
+
+var string File;
+var string Hash;
+
+defaultproperties{}

@@ -1,0 +1,42 @@
+// dm-gameinfo
+//function StartMatch(){
+//	local bool bTemp;
+//	local int Num;
+//	local Controller P;
+//	local Actor A;
+//	
+//	Level.Game.GotoState('MatchInProgress');
+//	if ( Level.NetMode == NM_Standalone )Level.Game.RemainingBots = InitialBots;
+//	else Level.Game.RemainingBots = 0;
+//	Level.Game.GameReplicationInfo.RemainingMinute = RemainingTime;
+//	
+//	///if (GameStats!=None) GameStats.StartGame();
+//
+//	// tell all actors the game is starting
+//	ForEach Level.Game.AllActors(class'Actor', A) A.MatchStarting();
+//	
+//	// start human players first
+//	for ( P = Level.ControllerList; P!=None; P=P.nextController )
+//		if ( P.IsA('PlayerController') && (P.Pawn == None) )		{
+//			if ( Level.Game.bGameEnded ) return; // telefrag ended the game with ridiculous frag limit
+//			else if ( PlayerController(P).CanRestartPlayer()  ) RestartPlayer(P);
+//		}
+//	// start AI players
+//	for ( P = Level.ControllerList; P!=None; P=P.nextController )
+//		if ( P.bIsPlayer && !P.IsA('PlayerController') ){
+//			if ( Level.NetMode == NM_Standalone ) RestartPlayer(P);
+//			else P.GotoState('Dead','MPStart');
+//		}
+//	Level.Game.bWaitingToStartMatch = false;
+//	Level.Game.GameReplicationInfo.bMatchHasBegun = true;
+//
+//	
+//	bTemp = bMustJoinBeforeStart;
+//	bMustJoinBeforeStart = false;
+//	while ( NeedPlayers() && (Num<16) )	{
+//		if ( AddBot() ) RemainingBots--;
+//		Num++;
+//	}
+//	bMustJoinBeforeStart = bTemp;
+//	log("START MATCH");
+//}

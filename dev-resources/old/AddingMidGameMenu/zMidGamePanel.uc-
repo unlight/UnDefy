@@ -1,0 +1,45 @@
+class zMidGamePanel extends MidGamePanel;
+
+//var automated GUIScrollTextBox About;
+var automated GUILabel About;
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Super.Initcomponent(MyController, MyOwner);
+	
+	//About.Caption = "xtw wert";
+	//AddComponent("XInterface.GUILabel");
+	//About.AddText(" ");
+	//About.AddText("unreal64.ru");
+	
+	Debug("InitComponent" @ MyController @ MyOwner);
+}
+
+function bool ButtonClicked(GUIComponent Sender){
+	Debug("ButtonClicked" @ Sender);
+	return True;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{
+	Begin Object Class=GUILabel Name=TextBox
+		bMultiLine=True
+		bVisibleWhenEmpty=True
+		TextAlign=TXTA_Center
+		Caption="Test GUILabel"
+	End Object
+	About=TextBox
+//	Begin Object Class=GUIScrollTextBox Name=TextBox
+//		bNoTeletype=True
+//		CharDelay=0.000000
+//		EOLDelay=0.000000
+//		TextAlign=TXTA_Center
+//		OnCreateComponent=TextBox.InternalOnCreateComponent
+//		FontScale=FNS_Medium
+//		TabOrder=2
+//		bAcceptsInput=False
+//		bNeverFocus=True
+//	End Object
+}

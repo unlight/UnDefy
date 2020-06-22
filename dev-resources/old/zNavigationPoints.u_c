@@ -1,0 +1,62 @@
+class zNavigationPoints extends Info;
+
+var bool bPointsDetected;
+var array<string> LocationName;
+var array<vector> LocationCoord;
+
+event PostBeginPlay(){
+	Log(Self @ "PostBeginPlay");
+}
+
+function CheckRepeats(){
+	local int i, k, N;
+	local array<string> NewLocationName;
+	N = 0;
+	for(i = 0; i < LocationName.Length; i++){
+		N++;
+		for(k = 0; k < LocationName.Length; k++){
+			if(LocationName[i] == LocationName[k] && i != k){
+				NewLocationName[i] = LocationName[i] @ "#" $ N;
+				continue;
+			}
+			NewLocationName[i] = LocationName[i];
+		}
+	}
+	LocationName = NewLocationName;
+}
+
+auto state Detection{
+	function BeginState(){
+		Log("BeginState" @ Self);
+		Enable('Timer');
+		SetTimer(1, True);
+	}
+	event Timer(){
+		local Pickup P;
+		local int i;
+		local string S;
+		if(bPointsDetected){
+			Log(Self @ "LocationName.Length" @ LocationName.Length);
+			CheckRepeats();
+			Disable('Timer');
+			GotoState('');
+			return;
+		}
+		Log("Timer (Detection)" @ Self);
+		foreach AllActors(class'Pickup', P){
+			if(P.IsA('WeaponPickup')) S = P.GetHumanReadableName();
+			else if(P.IsA('UDamagePack')) S = "Double Damage";
+			else if(P.IsA('ShieldPack')) S = ShieldPack(P).ShieldAmount @ "Shield";
+			else if(P.IsA('SuperHealthPack')) S = "Mega Health";
+			else continue;
+			i = LocationName.Length;
+			LocationName[i] = S;
+			LocationCoord[i] = P.Location;
+		}
+		if(LocationName.Length > 0) bPointsDetected = True;
+	}
+}
+
+defaultproperties{
+	NetUpdateFrequency=0
+}

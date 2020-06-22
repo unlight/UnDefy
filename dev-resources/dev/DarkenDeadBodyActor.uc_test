@@ -1,0 +1,11 @@
+class DarkenDeadBodyActor extends Actor;
+
+// need set Pawn.Event = 'DarkenTrigger';
+event Trigger(Actor xPawn, Pawn EventInstigator){
+	if(xPawn.AmbientGlow != 0) xPawn.AmbientGlow = 0; 	//xPawn.bUnlit = True;
+}
+
+defaultproperties{
+	RemoteRole=ROLE_None
+	bHidden=True
+}

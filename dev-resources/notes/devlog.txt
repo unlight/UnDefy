@@ -1,0 +1,7 @@
+ОК. настройки для каждого хада свои -> не надо брать переменные из zPlayer
+Проблема варм-апа через state: может сделать DamageType заменить пустышками, которые не увеличив. фраги
+название: ACM - Advanced Championship Mod
+- короче делаем как в УТ-комп - НЕТ - через DeathInfo
+- модет быть перенести ServerInfo в zGameRules
+- как обновлять правила серверп:
+foreach P.ControllerList; P != None; P = P.Next) 	zPlayer(P).Rules.Var = NewVar

@@ -1,0 +1,49 @@
+class zTeamInfoUpdater extends Info dependson(zUtil);
+
+// todo: это как ZteamgamereplicationInfo (может потом переименовать)
+
+var zMain Main;
+
+function PostBeginPlay(){
+	Main = zMain(Owner);
+	SetTimer(1, True); // может заюзать тик?
+	Log(GetHumanReadableName() @ "Spawned!");
+}
+
+function string GetHumanReadableName(){
+	return "TeamInfo Updater";
+}
+
+event Timer(){
+	local Controller C;
+	local zLinkedReplicationInfo Linked;
+	local int Index;
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		if(xPawn(C.Pawn) == None) continue;
+		Linked = class'zLinkedReplicationInfo'.static.Get(C.PlayerReplicationInfo);
+		if(Linked != None) UpdateOverlayData(Linked, xPawn(C.Pawn));
+	}
+	for(Index = 0; Index < 2; Index++)
+		if(Main.MyGame.TeamCaptains[Index] == None || 
+			Main.MyGame.TeamCaptains[Index].Team == None ||
+			Main.MyGame.TeamCaptains[Index].Team.TeamIndex != Index){
+				Main.MyGame.TeamCaptains[Index] = None;
+				Main.MyGame.SetTeamCaptain(Index);
+			}
+				
+}
+
+final function UpdateOverlayData(out zLinkedReplicationInfo Linked, xPawn P){
+//	Linked.MyWeapon = C.Pawn.Weapon.GetHumanReadableName();
+	if(P.Weapon != None) Linked.MyWeapon = P.Weapon.InventoryGroup;
+	Linked.MyLocation = P.Location;
+	Linked.MyHealth = P.Health;
+	Linked.MyShield = P.ShieldStrength;
+	Linked.MySmallShield = P.SmallShieldStrength;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{}

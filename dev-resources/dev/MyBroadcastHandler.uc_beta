@@ -1,0 +1,17 @@
+class MyBroadcastHandler extends BroadcastHandler;
+
+function bool IsGameMessage(class<LocalMessage> Message, PlayerReplicationInfo R1){
+	return (Level.Game.GameMessageClass == Message && R1 != None);
+}
+//
+//event AllowBroadcastLocalized(Actor Sender, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+//	if(N == 3 && TeamGame(Sender) != None && IsGameMessage(Message, R1)) zMain(Owner).TeamChanged(R1);
+//	else if(N == 14 && PlayerController(Sender) != None && IsGameMessage(Message, R1)) zMain(Owner).BecameSpectator(R1);
+//	Super.AllowBroadcastLocalized(Sender, Message, N, R1, R2, O);
+//}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{}

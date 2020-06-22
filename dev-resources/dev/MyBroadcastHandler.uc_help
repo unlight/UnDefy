@@ -1,0 +1,11 @@
+class MyBroadcastHandler extends BroadcastHandler;
+
+event AllowBroadcastLocalized( actor Sender, class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject ){
+	if(Sender != Level.Game && Message != Level.Game.DeathMessageClass && Switch != 0 && Controller(RelatedPRI_1.Owner) != None){
+		if(class<DamTypeSniperHeadShot>(OptionalObject) != None || 
+			class<DamTypeClassicHeadshot>(OptionalObject) != None){
+				Level.Game.Broadcast(Controller(RelatedPRI_1.Owner), "HEADSHOT :-)", 'Say');
+			}
+	}
+	Super.AllowBroadcastLocalized(Sender, Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+}

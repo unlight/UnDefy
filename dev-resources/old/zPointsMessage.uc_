@@ -1,0 +1,16 @@
+class zPointsMessage extends LocalMessage;
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	local zPointsB zPointsB;
+	local zTeamHudOverlay zTeamHudOverlay;
+	zPointsB = zPointsB(O);
+	if(zPointsB == None) return;
+	zTeamHudOverlay = P.Spawn(class'zTeamHudOverlay');
+	zTeamHudOverlay.Objects = zPointsB(O).Objects;
+	P.myHUD.AddHudOverlay( zTeamHudOverlay );
+}
+
+defaultproperties{
+	Lifetime=0
+	bIsConsoleMessage=False
+}

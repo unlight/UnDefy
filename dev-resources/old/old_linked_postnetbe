@@ -1,0 +1,10 @@
+/*simulated event PostNetBeginPlay(){
+	if(Level.NetMode == NM_Client) Me = Level.GetLocalPlayerController();
+	else{
+		//InitDamageArray(GivenDamage, class'DamTypeAssaultBullet');
+		//InitDamageArray(GivenDamage, class'DamTypeAssaultGrenade');
+		Me = PlayerController(Owner);
+		//if(Level.Game.bTeamGame) SetTimer(1, True);
+	}
+	if(Me == None) bMyHitsounds = False;
+}*/

@@ -1,0 +1,11 @@
+class DummyBackground extends AltSectionBackground;
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultProperties{
+	HeaderBase=None
+	TopPadding=0.05
+	BottomPadding=-0.05
+}

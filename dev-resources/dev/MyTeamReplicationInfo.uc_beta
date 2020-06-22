@@ -1,0 +1,73 @@
+class MyTeamReplicationInfo extends ReplicationInfo;
+
+// наверно будет цепляться только к капитану, а не ко всем
+// если уничтожен значит капитан пропал
+// 1. статистика (сколько флагов взято и недотащено и т.д.)
+
+// создается когда игрок респавнится
+var zLinkedReplicationInfo CaptainLinkedInfo;
+var byte TimeoutCalled;
+
+var Controller Captain;
+var byte TeamIndex;
+
+//function bool IsCaptain(zLinkedReplicationInfo LRI){
+//	return (CaptainLinkedInfo == LRI);
+//}
+
+function PostBeginPlay(){ 
+	Captain = Controller(Owner);
+	TeamIndex = Captain.GetTeamNum();
+	CaptainLinkedInfo = class'zLinkedReplicationInfo'.static.Get(Captain.PlayerReplicationInfo);
+	SetTimer(1, True);
+}
+
+function Timer(){
+	if(Captain.GetTeamNum() != TeamIndex) AssignCaptain(0);
+	TimerRate = RandRange(2.0, 4.0);
+}
+
+function AssignCaptain(optional int PlayerID){
+	local PlayerReplicationInfo PRI;
+	local int i;
+	if(PlayerID != 0) PRI = Level.GRI.FindPlayerByID(PlayerID);
+//	if(PRI != None && PRI.Team == None && PRI.Team.TeamIndex == TeamIndex){
+//		PRI
+//	}
+//	for( i=0; i<PRIArray.Length; i++ )
+//	{
+//		if( PRIArray[i].PlayerID == PlayerID )
+}
+
+//function bool AssignCaptain(int TeamNum, optional int PlayerID){ // 0 - random
+//	local Controller C;
+//	local zLinkedReplicationInfo LRI, TeamMates[2];
+//	local bool bTeamMate;
+//	if(CaptainLinkedInfo != None) TeamNum = CaptainLinkedInfo.Me.GetTeamNum();
+//	for(C = Level.ControllerList; C != None; C = C.NextController){
+//		LRI = class'zLinkedReplicationInfo'.static.Get(C.PlayerReplicationInfo);
+//		if(C.PlayerReplicationInfo.Team != None && LRI.IsPlayer()) TeamMates[C.GetTeamNum()] = LRI;
+//		bTeamMate = (LRI != CaptainLinkedInfo && LRI.IsPlayer() && C.GetTeamNum() == TeamNum);
+//		if(bTeamMate && PlayerID == C.PlayerReplicationInfo.PlayerID){
+//			CaptainLinkedInfo = LRI;
+//			CaptainLinkedInfo.ReceiveMessage(class'TeamCaptainMessage', TeamNum);
+//			return True;
+//		}
+//	}
+//	// PlayerID = 0 (или в команде пусто), назначаем капитана первого попавшегося из команды
+//	if(TeamMates[TeamNum] == CaptainLinkedInfo) return False; // нет игроков в команде
+//	CaptainLinkedInfo = TeamMates[TeamNum];
+//	CaptainLinkedInfo.ReceiveMessage(class'TeamCaptainMessage', TeamNum);
+//	return True;
+//	
+//}
+
+//event Destroyed(){
+//}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+}

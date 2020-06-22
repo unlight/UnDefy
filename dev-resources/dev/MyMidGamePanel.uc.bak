@@ -1,0 +1,71 @@
+class MyMidGamePanel extends MidGamePanel;
+
+var automated GUITabControl TabControl;
+var automated GUIHeader Header;
+
+event bool OnPreDrawEvent(Canvas C){
+	if(OnPreDrawCount > 0) return False;
+	Debug("OnPreDrawEvent" @ Header.RelativeLeft() $"+"$ Header.RelativeLeft());
+	OnPreDrawCount++;
+	return False;
+}
+
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Super.InitComponent(MyController, MyOwner);
+
+	Header.SetCaption("Header");
+	
+	TabControl.AddTab("Tab 1", string(class'MyTabPanelA'));
+	TabControl.AddTab("Tab 2", string(class'MyTabPanelB'));
+	
+	Header.DockedTabs = TabControl;
+
+	Debug("InitComponent" @ MyController @ MyOwner);
+	
+}
+
+//event OnShow(){
+//	Debug("OnShow" @ Self @ );
+//}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{
+
+	OnPreDraw=OnPreDrawEvent
+	
+	Begin Object Class=GUIHeader Name=GUIHeader1
+	End Object
+	Header=GUIHeader1
+	
+	Begin Object Class=GUITabControl Name=GUITabControl1
+		bFillSpace=True
+		bDockPanels=True
+		TabHeight=0.037500
+		BackgroundStyleName="TabBackground"
+//		WinTop=0.007028 // WinTop=0.007028 - no header // 059026
+//		WinLeft=0.012500
+		//WinWidth=1.0
+//		WinWidth=0.974999
+//		WinHeight=0.044644
+//        WinTop=0.040
+//        WinLeft=0.013
+//        WinWidth=0.950
+//        WinHeight=0.910
+		WinTop=0.041733
+		WinHeight=0.917784
+		bBoundToParent=True
+		bScaleToParent=True
+		bAcceptsInput=True
+		bInit=False
+		//OnActivate=GUITabControl.InternalOnActivate
+		//OnKeyEvent=GUITabControl.InternalOnKeyEvent
+	End Object
+	TabControl=GUITabControl1
+	
+	Begin Object Class=GUIFooter Name=GUIFooter1
+	End Object
+}

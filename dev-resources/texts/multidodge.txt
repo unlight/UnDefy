@@ -1,0 +1,6 @@
+	if(Me.DoubleClickDir == DCLICK_Active){
+		Debug("ClearDoubleClick()");
+		Me.ClearDoubleClick();
+		//PlayerInput.DoubleClickTimer = PlayerInput.DoubleClickTime;
+		Me.DoubleClickDir = DCLICK_Done;
+	}

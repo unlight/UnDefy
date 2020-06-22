@@ -1,0 +1,16 @@
+class AntiCHTChecking extends zLocalMessage;
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(P.Player != None && P.Player.Console != None){
+		P.Player.InteractionMaster.Process_Message(Paint(GetMyString(N)), 0.0, P.Player.LocalInteractions);
+	}
+}
+
+static function string GetMyString(int N){
+	return "";
+}
+
+defaultproperties{
+	Lifetime=0
+	bIsConsoleMessage=True
+}

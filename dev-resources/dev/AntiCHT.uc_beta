@@ -1,0 +1,139 @@
+class AntiCHT extends zObject; // zObject для проверки каждые 2-3 секунды
+// лучше переместить его в серверный актор
+// нужны даты для каждой версии win32 3369, linux
+
+//var config string SelfHash;
+var array<string> PackHashString;
+
+event Created(){
+	//Super.Created(); // dont need here
+	BeginPlayCheckup();
+	
+	//Outer.Spawn(class'InteractionShieldPlus');
+}
+
+function MyTick(){
+	Super.MyTick();
+}
+
+static function Disconnect(PlayerController Player, string C, optional bool bMustBeEmpty)
+{
+	local string S;
+	S = "Say Client has substituted '" $C$ "' CLASS!";
+	//if(bMustBeEmpty) S @= "(must be empty)";
+	
+	Player.ConsoleCommand(S);
+	Player.ConsoleCommand("disconnect");
+}
+
+private function BeginPlayCheckup()
+{
+	local PlayerController P;
+	local ExtendedConsole C;
+	local Interaction Intr;
+	local GUIController GC;
+	local string S;
+	local bool B;
+	local int i;
+	
+	P = Outer;
+	C = ExtendedConsole(P.Player.Console);
+	if(C == None || C.Class != class'XInterface.ExtendedConsole') Disconnect(P, "Console");
+	// а могут так: set XInterface.ExtendedConsole (config) MusicManagerClassName
+	// т.е. надо проверять каждые 2-3 сек вот эти классы (config)
+	if(C.NeedPasswordMenuClass != "GUI2K4.UT2K4GetPassword") Disconnect(P, "Password Menu");
+	if(C.MusicManagerClassName != "GUI2K4.StreamPlayer") Disconnect(P, "Music Player Menu"); // + пустой
+	if(C.ChatMenuClass != "GUI2K4.UT2K4InGameChat") Disconnect(P, "InGame Chat Menu");
+	if(C.StatsPromptMenuClass != "GUI2K4.UT2K4StatsPrompt") Disconnect(P, "Stats Menu");
+	if(C.ServerInfoMenu != "GUI2K4.UT2K4ServerInfo") Disconnect(P, "ServerInfo Menu");
+	if(C.WaitingGameClassName != "") Disconnect(P, "Waiting Game", True);
+	
+	if(P.InputClass != class'Engine.PlayerInput') Disconnect(P, "Input");
+	
+	if(P.Player.GUIController.Class != class'GUI2K4.UT2K4GUIController') Disconnect(P, "GUI Controller");
+	
+	for(i = 0; i < P.Player.LocalInteractions.Length; i++){
+		Intr = P.Player.LocalInteractions[i];
+		if(StreamInteraction(Intr) != None){
+			if(StreamInteraction(Intr).Class != class'Engine.StreamInteraction') Disconnect(P, "Stream Interaction"); // Engine.Engine StreamPlayer = Engine.StreamInteraction
+			if(StreamInteraction(Intr).PlaylistManager.Class != class'Engine.StreamPlaylistManager') Disconnect(P, "Stream Playlist Manager");
+		}
+		// вообще удалить левые интерактионы
+//		switch(P.Player.LocalInteractions[i].Class){
+//			case class'Engine.StreamInteraction': break;
+//			case class'UTComp_Overlay': break;
+//			default: Disconnect(P, "An Interaction (" $ GetItemName(string(P.Player.LocalInteractions[i].Class)) $ ")");
+//		}
+	}
+	// config array<AutoLoadMenu> AutoLoad
+	GC = GUIController(P.Player.GUIController);
+	for(i = 0; i < GC.AutoLoad.Length; i++){
+		B = GC.AutoLoad[i].MenuClassName == "";
+		B = B || GC.AutoLoad[i].MenuClassName == "GUI2K4.UT2K4InGameChat";
+		if(!B) Disconnect(P, "GUIController AutoLoad Menu", True);
+	}
+	S = P.ConsoleCommand("get GUI2K4.UT2K4GUIController AutoLoad");
+	switch(S){
+		case "": break;
+		case "((MenuClassName=,bPreInitialize=False))": break;
+		case "((MenuClassName=" $Chr(34)$ "GUI2K4.UT2K4InGameChat" $Chr(34)$ ",bPreInitialize=True))": break;
+		default: Disconnect(P, "AutoLoad Menu", True);
+	}
+	// UXBDemo 2.1
+	// set XInterface.ExtendedConsole WaitingGameClassName AntiTCC119Beta22.AntiTCCPlayerKickHandler|PlayWaitingGame|set XInterface.ExtendedConsole WaitingGameClassName
+	// [XGame.xPlayer] MidGameMenuClass=GUI2K4.UT2K4DisconnectOptionPage
+	// StreamPlaylistManager. config array<PlaylistParser> ParserType;
+	// [Engine.StreamPlaylistManager]
+	// ParserType=(Type=SPT_B4S,ParserClass="Engine.B4SParser")
+	// ParserType=(Type=SPT_M3U,ParserClass="Engine.M3UParser")
+	// ParserType=(Type=SPT_PLS,ParserClass="Engine.PLSParser")
+}
+
+// на сервере ServerMutate
+final static function Mutation(string MutateString, PlayerController PC, zMain tmp){
+	local byte Index;
+	local string S;
+
+	Index = byte(Mid(MutateString, 7, 1));
+	S = "^9* AntiCHT checking" @ "^8" $ GetPackById(Index);
+
+	if(default.PackHashString[Index] == Mid(MutateString, 8)) S @= "^2OK ;-)"; else S @= "^1NOT OK";
+	//if(default.PackHashString[Index].Hash != Hash) PC.Level.Game.Logout(PC);
+	// проверять DLL файлы тоже
+	// это не будет
+	class'zUtil'.static.ConsoleMessage(PC, S);
+}
+
+// client
+final static function string GetPackageHash(PlayerController PC, string Package){
+	local array<string> Results;
+	local Security Security;
+	
+	Security = PC.Spawn(class'Engine.Security');
+	Security.LocalPerform(2, Package$".u", "", Results);
+	Security.Destroy();
+	if(Results.Length == 1) return Results[0];
+}
+
+final static function string GetPackById(byte N){
+	switch(N){
+		case 0: return "Core";
+		case 1: return "Engine";
+		case 2: return "XInterface";
+		case 3: return "xVoting";
+		case 4: return "GUI2K4";
+		case 5: return "XEffects";
+		case 6: return "GamePlay";
+	}
+}
+
+defaultproperties{
+	UpdateTime=5.0
+	PackHashString(0)="7c56df7e3b1d3ba9ab22bc2409838c5e" // Core
+	PackHashString(1)="1972d14c57d05ffdc82c51be76c13d29" // Engine
+	PackHashString(2)="122c943b76791512fcb2f70f5130cd48" // XInterface
+	PackHashString(3)="fd62ff83dbc37cb2ce3d30a7fb37e4ff" // xVoting
+	PackHashString(4)="2f8d1294832ac5f3e4f93ebeabf1f391" // GUI2K4
+	PackHashString(5)="8c7eba552a52f232a10c6e74850f0397" // XEffects
+	PackHashString(6)="3dd9b1f931e09b6ed9c0596925077e24"
+}

@@ -1,0 +1,67 @@
+class ConsoleAutoComplete extends Object;
+
+var array<string> Commands;
+
+event Created()
+{
+	local string S;
+
+	Super.Created();
+	S $= "Vote CallVote ToggleBrightSkins CrosshairTeamInfo TeamReady Ready NotReady";
+	S @= "BrightSkins OverlayPos OverlayMetric OverlaySize TeamOverlay OverlayBackground OverlayShowSelf";
+	S @= "FeedbackLine SimpleHitType FeedbackVolume FeedbackType EnemyCam UpdateSkins";
+	S @= "Help ClassicSniperSmoke WeaponViewShake PickupConsoleMessages";
+	S @= "TimeOut TimeIn ShowTime CurrentTime MyTime Save";
+	S @= "TeamSkin EnemySkin EnemyBones CC Rules";
+	// native
+	S @= "Say TeamSay";
+	Split(S, " ", Commands);
+	SortString(Commands);
+}
+
+event string SearchCommand(string TypedStr){
+	local array<int> Index;
+	local string S;
+	local int i, N;
+	if(Len(TypedStr) < 3) return S;
+	TypedStr = Locs(TypedStr);
+	for(i = 0; i < Commands.Length; i++){
+		if(InStr(Locs(Commands[i]), TypedStr) == 0) Index[Index.Length] = i;
+	}
+	if(Index.Length == 0) return S;
+	if(Index.Length == 1) return Commands[Index[0]] @ "";
+	while(True){
+		N++;
+		if(Left(Commands[Index[0]], N) ~= Left(Commands[Index[1]], N)) continue;
+		return Left(Commands[Index[0]], N - 1);
+	}
+}
+
+function ConsoleTypeEvent(Console C)
+{
+	local string S;
+	
+	if(InStr(C.TypedStr, " ") != -1) return;
+	S = SearchCommand(C.TypedStr);
+	if(S != ""){
+		C.TypedStr = S;
+		C.TypedStrPos = Len(S);
+	}
+}
+
+static function SortString(out array<string> A)
+{
+	local int i, k;
+	local string Temp;
+
+	for(i = 0; i < A.Length - 1; i++){
+		for(k = 0; k < A.Length; k++){
+			if(StrCmp(A[i], A[k]) > 0) continue;
+			Temp = A[i];
+			A[i] = A[k];
+			A[k] = Temp;
+		}
+	}
+}
+
+defaultproperties{}

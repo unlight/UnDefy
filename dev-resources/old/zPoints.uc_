@@ -1,0 +1,33 @@
+class zPoints extends Info;
+
+struct ObjectCoordinates{
+	var string ObjectName;
+	var vector Coordinates;
+};
+var array<ObjectCoordinates> Objects;
+
+function Tick(float F){
+	GetNavigationPickups();
+	Log("Tick" @ Objects.Length);
+	if(Objects.Length > 0) Disable('Tick');
+}
+
+function GetNavigationPickups(){
+	local Pickup P;
+	local string S;
+	local ObjectCoordinates LocalLocation;
+	foreach AllActors(class'Pickup', P){
+		if(P.IsA('WeaponPickup')) S = P.GetHumanReadableName();
+		else if(P.IsA('UDamagePack')) S = "DOUBLE DAMAGE";
+		else if(P.IsA('ShieldPack')) S = ShieldPack(P).ShieldAmount @ "Shield";
+		else if(P.IsA('SuperHealthPack')) S = "Mega Health";
+		else continue;
+		LocalLocation.ObjectName = S;
+		LocalLocation.Coordinates = P.Location;
+		Objects[Objects.Length] = LocalLocation;
+	}
+}
+
+defaultproperties{
+	bAlwaysRelevant=True
+}

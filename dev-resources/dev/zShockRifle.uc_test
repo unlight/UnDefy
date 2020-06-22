@@ -1,0 +1,45 @@
+class zShockRifle extends ShockRifle;
+
+simulated function PostBeginPlay(){
+	Debug("PostBeginPlay");
+	Super.PostBeginPlay();
+}
+
+simulated event ClientStartFire(int Mode){
+	Debug("ClientStartFire" @ Mode);
+    if(Pawn(Owner).Controller.IsInState('GameEnded') || Pawn(Owner).Controller.IsInState('RoundEnded')) return;
+    if(Role == ROLE_Authority) StartFire(Mode);
+	else if(StartFire(Mode)) ServerStartFire(Mode);
+}
+
+simulated function bool StartFire(int mode){
+	local int Alt;
+	Debug("StartFire" @ mode);
+	// shock
+	if(bWaitForCombo && Bot(Instigator.Controller) != None){
+		if(ComboTarget == None || ComboTarget.bDeleteMe) bWaitForCombo = False;
+		else return False;
+	}
+	// weapon
+	if(!ReadyToFire(Mode)) return False;
+	if(Mode == 0) Alt = 1;
+    else Alt = 0;
+    FireMode[Mode].bIsFiring = true;
+    FireMode[Mode].NextFireTime = Level.TimeSeconds + FireMode[Mode].PreFireTime;
+    if(FireMode[Alt].bModeExclusive) FireMode[Mode].NextFireTime = FMax(FireMode[Mode].NextFireTime, FireMode[alt].NextFireTime);
+    if(Instigator.IsLocallyControlled()){
+        if(FireMode[Mode].PreFireTime > 0.0 || FireMode[Mode].bFireOnRelease) FireMode[Mode].PlayPreFire();
+        FireMode[Mode].FireCount = 0;
+    }
+    return True;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	FireModeClass(0)=class'zShockBeamFire'
+	FireModeClass(1)=class'zShockProjFire'
+}
+

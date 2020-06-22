@@ -1,0 +1,14 @@
+function ServerRequestLoc(byte N){
+	if(MyGame == None) foreach DynamicActors(class'zTeamGameReplicationInfo', MyGame) break;
+	if(MyGame != None && N < MyGame.LocNames.Length) ClientNotifyLoc(N, MyGame.LocNames[N], MyGame.LocCoordinates[N]);
+	else ClientNotifyLoc(255);
+}
+
+simulated function ClientNotifyLoc(byte N, optional string S, optional vector V){
+	if(TeamOverlay == None) foreach DynamicActors(class'TeamHudOverlay', TeamOverlay) break;
+	if(TeamOverlay != None){
+		if(N == 255){ TeamOverlay.Disable('Timer'); return; }
+		TeamOverlay.LocNames[N] = S;
+		TeamOverlay.LocCoordinates[N] = V;
+	}
+}

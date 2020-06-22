@@ -1,0 +1,46 @@
+class zVotingReplicationInfo extends ReplicationInfo;
+
+var int VotedMask;
+var string VotedMap;
+var PlayerReplicationInfo Caller;
+var byte Voted[2];
+var byte VotingTime;
+var PlayerController Me;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) Caller, VotedMap, VotedMask;
+	reliable if(Role == Role_Authority) Voted;
+}
+
+event PreBeginPlay(){
+	VotedMap = zVoting(Owner).Map;
+	VotedMask = zVoting(Owner).Mask;
+	Caller = zVoting(Owner).Caller;
+	VotingTime = zMain(zVoting(Owner).Owner).VotingTime;
+}
+
+
+simulated event PostNetBeginPlay(){
+	Me = Level.GetLocalPlayerController();
+	SetTimer(1, True);
+	if(Me != None){
+		Me.ReceiveLocalizedMessage(class'VoteMessage', -1, Caller); // -1 = smb called vote!
+		Me.ReceiveLocalizedMessage(class'VoteMessage', VotedMask, None, None, Self);
+	}
+}
+
+simulated event Timer(){
+	if(VotingTime-- <= 0){
+		Me.ReceiveLocalizedMessage(class'VoteMessage', -1, Caller); // -1 = smb called vote!
+		Me.ReceiveLocalizedMessage(class'VoteMessage', VotedMask, None, None, Self);
+		Me.ReceiveLocalizedMessage(class'VoteMessage', -2, None, None, Self); // - who how voted
+		Destroy();
+	}
+	if(Me != None) Me.ReceiveLocalizedMessage(class'VoteMessage', -2, None, None, Self); // - who how voted
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{}

@@ -1,0 +1,25 @@
+class MyShieldGun extends ShieldGun HideDropDown CacheExempt;
+
+var bool bLinkShaft;
+//var bool bPass;
+
+function AdjustPlayerDamage(out int Damage, Pawn Attacker, vector HitLocation, out vector Momentum, class<DamageType> DamageType){
+	//bPass = (DamageType == class'DamTypeLinkShaft' && bLinkPower);
+	//Debug("bPass" @ bPass @ Damage @ Attacker.GetHumanReadableName() @ DamageType);
+	bLinkShaft = (DamageType == class'DamTypeLinkShaft');
+	//if(bLinkShaft) Damage *= 0.8;
+	Super.AdjustPlayerDamage(Damage, Attacker, HitLocation, Momentum, DamageType);
+}
+
+function bool CheckReflect(vector HitLocation, out vector RefNormal, int AmmoDrain){
+	//if(bPass) return False;
+	if(bLinkShaft) return False;
+	return Super.CheckReflect(HitLocation, RefNormal, AmmoDrain);
+	
+}
+
+//simulated function Debug(coerce string S){
+//	class'zUtil'.static.Debug(S, Self);
+//}
+
+defaultproperties{}

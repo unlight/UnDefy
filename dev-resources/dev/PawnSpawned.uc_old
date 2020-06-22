@@ -1,0 +1,14 @@
+class PawnSpawned extends zLocalMessage;
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	P.ConsoleCommand("UpdateSkins");
+}
+
+static function bool IsConsoleMessage(int N){
+	return False;
+}
+
+defaultproperties{
+	Lifetime=0
+	bIsConsoleMessage=False
+}

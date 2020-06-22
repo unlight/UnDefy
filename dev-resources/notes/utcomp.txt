@@ -1,0 +1,19 @@
+function bool IsUTCompWarmup(){
+	local ReplicationInfo R;
+	local string ClassName;
+	if(UTCompWarmup != 255) return bool(UTCompWarmup);
+	if(!MainMutator.bUTComp){
+		UTCompWarmup = 0;
+		return False;
+	}
+	UTCompWarmup = 0;
+	foreach DynamicActors(class'ReplicationInfo', R){
+		ClassName = GetItemName(string(R.Class));
+		if(R.IsA('UTComp_Warmup')) return True;
+		if(ClassName ~= "UTComp_Warmup"){
+			UTCompWarmup = 1;
+			break;
+		}
+	}
+	return bool(UTCompWarmup);
+}

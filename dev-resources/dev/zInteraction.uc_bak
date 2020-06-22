@@ -1,0 +1,342 @@
+class zInteraction extends Interaction;
+
+// todo: попробовать выключить bRequiresTick если тварь EnemyCamPawn найдена
+// done: показывать камеру только для PlayerReplicationInfo.bOnlySpectator
+// todo: exec maplist
+// done: показывать имя игрока от которого смотрим (чуть выше нижней границы)
+// done: teamready
+// done: enemycam: когда тварь умерла оставлять над ней камеру еще нес-ко секунд
+// todo: вращать камеру по вертикали тоже
+// todo: если переключилась на того от кого камера, то меняем
+
+var PlayerController Me;
+var zLinkedReplicationInfo LinkedReplicationInfo;
+
+// 0 - catchenemycam, 1 - crosshair teaminfo, 2 - bright skins, 3- console competition
+var float NextTimerTime[4]; // - избавится
+//var xBrightSkins Brite;
+var BrightSkins Brite;
+var int TickSecond;
+var zMain Main;
+var EnemyCam Camera;
+var CrosshairTeamInfo CT;
+var ConsoleAutoComplete AC;
+
+
+event Initialized(){
+	Me = ViewportOwner.Actor;
+	LinkedReplicationInfo = class'zLinkedReplicationInfo'.static.Get(Me.PlayerReplicationInfo);
+	//LoadInteraction(Me, 'AddingMidGameMenu');
+	foreach Me.DynamicActors(class'zMain', Main) if(Main != None) break;
+	DisableTick(2);
+	if(Main.bAllowBrightSkins) Brite = new(Me) class'BrightSkins';
+	
+	if(class'zMain'.default.bCCAutoComplete) AC = new class'ConsoleAutoComplete';
+	if(Me.GameReplicationInfo.bTeamGame) CT = new(Me) class'CrosshairTeamInfo';
+	Camera = new(Me) class'EnemyCam';
+}
+
+exec function ec(){
+	//Me.MyHUD.AddHudOverlay( Me.Spawn() );
+}
+
+// обязательно надо обновить время апдейта, иначе будет всегда тикать
+event Tick(float DeltaTime){
+	// впереди которое чаще
+	if(CT != None && Me.Level.TimeSeconds > CT.NextUpdateTime) CT.MyTick(); // ~ 0.25
+	else if(Me.Level.TimeSeconds > Camera.NextUpdateTime) Camera.MyTick(); // ~ 2.5
+	else if(Me.Level.TimeSeconds > NextTimerTime[2]) SetBrightSkins();
+	else if(ViewportOwner.Console.TypedStr != "" && AC != None) ConsoleEvent();
+}
+//function bool KeyEvent(out EInputKey Key, out EInputAction Action, float Delta){
+
+function ConsoleEvent(){
+	local string S;
+	if(InStr(ViewportOwner.Console.TypedStr, " ") > 0) return;
+	//Debug("ConsoleEvent");
+	S = AC.Tick(ViewportOwner.Console.TypedStr);
+	if(S != ""){
+		ViewportOwner.Console.TypedStr = S;
+		ViewportOwner.Console.TypedStrPos = Len(S);
+	}
+}
+
+exec function Vote(string S){
+	if(IsSpectator()) return;
+	if(S ~= "yes") Me.ServerMutate("voting_cast_1");
+	else if(S ~= "no") Me.ServerMutate("voting_cast_");
+	else return;
+}
+
+exec function CallVote(string S){
+	S = class'zUtil'.static.Trim(S);
+	if(S != "") Me.ServerMutate("voting_call_" $ S);
+}
+
+exec final function ToggleBrightSkins(){
+	local string S;
+	S = "^0Bright Skins mode";
+	class'zMain'.default.bEnableBrightSkins = !class'zMain'.default.bEnableBrightSkins;
+	S @= Eval(class'zMain'.default.bEnableBrightSkins, "^2ON!", "^1OFF!");
+	Me.ClientMessage( class'zUtil'.static.Paint(S) );
+	Save();
+}
+
+exec function CrosshairTeamInfo(bool B){
+	class'zMain'.default.bCrosshairTeamInfo = B;
+}
+
+final exec function TeamReady(){
+	if(IsSpectator()) return;
+	Me.ServerMutate("teamready");
+}
+
+exec function Ready(){
+	if(IsSpectator()) return;
+	if(Me.PlayerReplicationInfo.bReadyToPlay){
+		Me.ClientMessage("You are already ready!");
+		return;
+	}
+	Me.PlayerReplicationInfo.bReadyToPlay = True;
+	Me.ServerMutate("ready");
+}
+function bool IsSpectator(){
+	if(Me.PlayerReplicationInfo.bOnlySpectator){
+		Me.ClientMessage("You are spectator!");
+		return True;
+	}
+	return False;
+}
+exec function NotReady(){
+	if(IsSpectator()) return;
+	if(!Me.PlayerReplicationInfo.bReadyToPlay){
+		Me.ClientMessage("You are already not ready!");
+		return;
+	}
+	Me.PlayerReplicationInfo.bReadyToPlay = False;
+	Me.ServerMutate("notready");
+}
+
+// order: BrightSkins 1, EnemySkin X, TeamSkin Y
+exec function BrightSkins(bool Boolean){
+	class'zMain'.default.bEnableBrightSkins = Boolean;
+	if(!Boolean) SetBrightSkins();
+}
+
+exec function OverlayPos(int X, int Y){
+	class'zMain'.default.OverlayPosX = X;
+	class'zMain'.default.OverlayPosY = Y;
+}
+exec function OverlayMetric(byte X){
+	class'zMain'.default.OverlayMetric = Clamp(X, 0, 2); // 0 - m 1 - feets 2 -yards
+}
+exec function OverlaySize(coerce int Size){
+	class'zMain'.default.OverlaySize = Clamp(Size, 0, 8);
+	if(class'zMain'.default.OverlaySize != 0) TeamOverlay(True);
+	else TeamOverlay(False);
+}
+exec function TeamOverlay(bool B){
+	class'zMain'.default.bTeamOverlay = B;
+}
+exec function OverlayBackground(byte R, byte G, byte B, byte A){
+	if(A == 0) A = 1;
+	class'zMain'.default.OverlayBackgroundColor = class'Canvas'.static.MakeColor(R, G, B, A);
+}
+
+exec function OverlayShowSelf(coerce bool B){
+	class'zMain'.default.bMeInOverlay = B;
+}
+
+// FeedbackLine // if FeedbackLine == 70 & Damage == 70 sound will be the loudest (100%)
+exec function FeedbackLine(int S){
+	class'zMain'.default.FeedbackLine = Clamp(S, 0, 200);
+}
+// 0 - hit1, 1 - like lowest CPMA, 2 - like normal CPMA
+exec function SimpleHitType(int T){
+	class'zMain'.default.iSimpleHitType = Clamp(T, 0, 2);
+}
+exec function FeedbackVolume(float V){
+	class'zMain'.default.FeedbackVolume = FClamp(V, 0, 2);
+}
+// 0 - disabled, 1 - simple, 2 - CPMA style, 3 - with attenuation.
+exec function FeedbackType(int Type){
+	local int iType;
+	iType = Clamp(Type, 0, 3);
+	class'zMain'.default.FeedbackType = iType;
+	LinkedReplicationInfo.ServerSetMyHitsounds(bool(iType));
+}
+exec function EnemyCam(byte Size){
+	class'zMain'.default.EnemyCam = Clamp(Size, 0, 99);
+}
+
+exec function UpdateSkins(){
+	if(Brite != None) EnableTick(2, 0.45);
+}
+
+function SetBrightSkins(){
+	DisableTick(2);
+	if(class'zMain'.default.bEnableBrightSkins && Brite != None) Brite.Tick();
+}
+
+function EnableTick(int i, float F){
+	NextTimerTime[i] = Me.Level.TimeSeconds + F;
+}
+
+function DisableTick(int i){
+	NextTimerTime[i] = MaxInt;
+}
+
+function PostRender(Canvas C){
+	if(Camera.Pawn != None) Camera.Draw(C);
+}
+
+exec function Help(optional string S){
+	local array<string> ConsoleMessages;
+	local int i;
+	class'zHelp'.static.Get(S, ConsoleMessages, Me);
+	for(i = 0; i < ConsoleMessages.Length; i++) ConsoleMessage(ConsoleMessages[i]);
+}
+
+function PreRender(Canvas C){
+	local HudBase HudBase;
+	if(class'zMain'.default.bDamageIndicators) return;
+	HudBase = HudBase(Me.MyHUD);
+	HudBase.DamageTime[0] = 0;
+	HudBase.DamageTime[1] = 0;
+	HudBase.DamageTime[2] = 0;
+	HudBase.DamageTime[3] = 0;
+}
+
+function ConsoleMessage(string Message){
+	class'zUtil'.static.ConsoleMessage(Me, Message);
+}
+
+exec function DrawDamageIndicators(bool B){ // bDrawDamageIndicators
+	class'zMain'.default.bDamageIndicators = B;
+}
+
+exec function ClassicSniperSmoke(bool B){
+	class'zMain'.default.bClassicSniperSmoke = B;
+	class'ClassicSniperSmoke'.default.bHidden = !B;
+}
+exec function WeaponViewShake(bool B){
+	class'zMain'.default.bMyWeaponViewShake = B;
+	Me.bWeaponViewShake = B;
+}
+exec function PickupConsoleMessages(bool B){
+	class'zMain'.default.bPickupConsoleMessages = B;
+	class'PickupMessagePlus'.default.bIsConsoleMessage = B;
+}
+
+exec function TimeOut(){
+	Me.ServerMutate("calltimeout");
+}
+
+exec function TimeIn(){
+	Me.ServerMutate("calltimein");
+}
+
+exec function ShowTime(){
+	Me.ServerMutate("showtime");
+}
+exec function CurrentTime(){
+	Me.ServerMutate("showtime");
+}
+
+exec function MyTime(){
+	local string S;
+	S = "Current time:^3" @ class'zUtil'.static.GetLevelTime(Me.Level);
+	Me.ClientMessage( class'zUtil'.static.Paint(S) );
+}
+
+//event NotifyLevelChange(){
+//	Master.RemoveInteraction(Self);
+//}
+
+exec function Save(){
+	class'zMain'.static.StaticSaveConfig();
+}
+
+static function bool InteractionExists(out PlayerController Me, name InteractionName, optional out int Index){
+	local int i;
+	for(i = 0; i < Me.Player.LocalInteractions.Length; i++){
+		if(Me.Player.LocalInteractions[i].IsA(InteractionName)){
+			Index = i;
+			return True;
+		}
+	}
+	return False;
+}
+
+static function UnloadInteraction(out PlayerController Me, name S){
+	local int Index;
+	if(InteractionExists(Me, S, Index)) Me.Player.LocalInteractions.Remove(Index, 1);
+}
+
+static function Interaction LoadInteraction(out PlayerController P, name S){
+	local int Index;
+	if(InteractionExists(P, S, Index)){
+		P.Player.LocalInteractions[Index].Initialized();
+		return P.Player.LocalInteractions[Index];
+	}
+	return P.Player.InteractionMaster.AddInteraction(class'zUtil'.static.GetPackageName(default.Class, True) $ S, P.Player);
+}
+event NotifyLevelChange(){
+	Master.RemoveInteraction(Self);
+}
+
+// Bright Skins
+exec function TeamSkin(string S){
+	if(Brite != None) Brite.TeamSkin(S);
+}
+exec function EnemySkin(string S){
+	if(Brite != None) Brite.EnemySkin(S);
+}
+exec function EnemyBones(string S){
+	if(Brite != None) Brite.EnemyBones(S);
+}
+
+exec function CC(){
+	local bool B;
+	local string S;
+	B =	!class'zMain'.default.bCCAutoComplete;
+	class'zMain'.default.bCCAutoComplete = B;
+	S = "^0Console Commands Autocompletion mode";
+	S @= Eval(B, "^2ON!", "^1OFF!");
+	if(!B) AC = None;
+	else if(B && AC == None) AC = new class'ConsoleAutoComplete';
+	Me.ClientMessage( class'zUtil'.static.Paint(S) );
+	Save();
+}
+
+static function string GetFriendlyAction(EInputAction A){
+	return Mid(GetEnum(enum'EInputAction', A), 4);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Me);
+}
+
+//exec event test1(){
+//	Debug("Console:" @ ViewportOwner.Console.GetStateName() @ ViewportOwner.Console.TypedStr @ ViewportOwner.Console.bTyping);
+//}
+//exec function testh1(){
+//	local bool b;
+//	b = class'zLinkedReplicationInfo'.static.Get(Me.PlayerReplicationInfo).bMyHitsounds;
+//	Debug("bMyHitsounds" @ b @ "Role" @ Me.Role);
+//}
+//
+//exec function seth(bool b){
+//	class'zLinkedReplicationInfo'.static.Get(Me.PlayerReplicationInfo).ServerSetMyHitsounds(B);
+//	Debug("seth" @ b);
+//}
+//exec function tests(){
+//	local int i;
+//	for(i = 0; i < 10; i++) Me.ReceiveLocalizedMessage(class'zHitSound', 25 * i, EnemyCamPawn.PlayerReplicationInfo);
+//}
+
+defaultproperties{
+	bActive=False
+	bRequiresTick=True
+	bVisible=True
+}

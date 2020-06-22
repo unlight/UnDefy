@@ -1,0 +1,10 @@
+UnrealHUD
+#exec Font Import File=Textures\MedFont3.pcx Name=WhiteFont
+
+C.bCenter = True;
+C.SetPos (0, 65*scale);
+C.DrawColor = WhiteColor * (0.12*abs(colorfluid1));
+if ( PlayerCount == 1)
+C.DrawText("PRE MATCH. WAITING FOR OTHER PLAYERS!", False);
+else
+C.DrawText("PRE MATCH. WAITING FOR READY SIGNALS!", False);

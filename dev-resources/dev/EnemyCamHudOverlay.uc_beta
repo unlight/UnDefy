@@ -1,0 +1,84 @@
+class EnemyCamHudOverlay extends HudOverlay;
+
+// todo: zHudOverlay
+
+var Pawn EnemyCamPawn;
+var PlayerController Me;
+var bool bVisible;
+var vector CamLocation;
+var bool bFloat;
+
+function PostNetBeginPlay(){
+	Me = Level.GetLocalPlayerController();
+}
+
+function Timer(){
+	Debug("Timer" @ TimerRate);
+	bVisible = class'zMain'.default.EnemyCam != 0 && (Me.PlayerReplicationInfo.bOnlySpectator || Me.bDemoOwner);
+}
+
+state Searching{
+	Begin:
+	Sleep(2.5);
+	CatchEnemyCam();
+	if(EnemyCamPawn == None) goto 'Begin';
+}
+
+state Tracking{
+	function Timer(){
+		Global.Timer();
+	}
+}
+
+event CatchEnemyCam(){
+	Debug("CatchEnemyCam" @ TimerRate);
+	foreach DynamicActors(class'Pawn', EnemyCamPawn){
+		if(EnemyCamPawn != Me.ViewTarget && EnemyCamPawn != None && EnemyCamPawn.PlayerReplicationInfo != None){
+			//TimerRate = default.TimerRate;
+			SetTimer(4, False);
+			bFloat = False;
+			return;
+		}
+	}
+	SetTimer(4, False);
+}
+
+//function MyRender(Canvas C){
+//	if(bVisible && EnemyCamPawn != None) Draw(C);
+//}
+
+function Draw(Canvas C){
+	local int DrawBoxPosX, DrawBoxPosY, SmallScreenWidth, SmallScreenHeight;
+	local float XL, YL, NamePosX, NamePosY;
+
+	CamLocation = EnemyCamPawn.Location + vect(0,0,70);
+	C.DrawPortal(DrawBoxPosX, DrawBoxPosY, SmallScreenWidth, SmallScreenHeight, EnemyCamPawn, CamLocation, EnemyCamPawn.Rotation);
+
+	SmallScreenWidth = C.ClipX * class'zMain'.default.EnemyCam / 200;
+	SmallScreenHeight = C.ClipY * class'zMain'.default.EnemyCam / 200;
+	DrawBoxPosX = C.ClipX - SmallScreenWidth - 5;
+	DrawBoxPosY = 5;
+	C.DrawColor = class'HUD'.default.WhiteColor;
+	C.SetPos(DrawBoxPosX, DrawBoxPosY);
+	C.DrawBox(C, SmallScreenWidth, SmallScreenHeight);
+	
+	if(EnemyCamPawn.PlayerReplicationInfo != None){
+		C.StrLen(EnemyCamPawn.PlayerReplicationInfo.PlayerName, XL, YL);
+		NamePosX = (SmallScreenWidth - XL) / 2 + DrawBoxPosX;
+		NamePosY = C.CurY + 5;
+		C.SetPos(NamePosX, NamePosY);
+		C.Font = C.SmallFont;
+		C.DrawText(EnemyCamPawn.PlayerReplicationInfo.PlayerName, False);		
+	}else GotoState('Searching');
+	C.SetPos(100,100);
+	C.DrawText("GetStateName" @ GetStateName());
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Me);
+}
+
+defaultproperties{
+	TimerRate=2.4
+	bTimerLoop=True
+}

@@ -1,0 +1,9 @@
+class zBotLinkedReplicationInfo extends zLinkedReplicationInfo;
+
+simulated event PostNetBeginPlay();
+simulated function ClientPlayHitsound(int Damage, PlayerReplicationInfo InjuredPRI);
+function ServerSetMyHitsounds(bool B);
+
+defaultproperties{
+	bMyHitsounds=False
+}

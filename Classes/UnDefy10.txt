@@ -1,0 +1,253 @@
+==============================
+*** UnDefy UT 2004 Mutator ***
+==============================
+Version: v10
+Date: 1 Aug 2009
+Author: S
+Mail: the-s[at]bk[dot]ru
+Web: sst.planetunreal.ru
+IRC: irc.dalnet.ru #unreal64
+Feedback, suggestions are welcome...
+
+DESCRIPTION
+===========
+UnDefy is a simple alternative competition mod for Unreal Tournament 2004.
+This mutator adds new features (which unfortunately doesn't exists in UTComp and TTM), such as timeout, enemy's cam, alternative location names (in team overlay), various team chat tokens, etc. No GUI ;) UnDefy can by used like addon for UTComp or TTM.
+Recommended for gametypes 1v1 and team deathmatch 2v2 (no bots!)
+Mod hasn't GUI, use console commands (see below).
+
+CLIENT CONSOLE COMMANDS
+=======================
+NOTE: Dont' forget save your client settings by typing command 'save'
+* help - shows help
+* ownfootsteps <0|1> - own footstep sounds (0 - No, 1 - Yes)
+* showtime (or currenttime) - shows current server time
+* mytime - shows current client time
+* enemycam - enemy's camera in top/right corner (only for spectators)
+* feedbacktype <0|1|2|3> - hitsounds type, 0 - disabled, 1 - simple, 2 - CPMA style, 3 - with attenuation.
+* feedbackvolume <0..2> - volume of hitsound
+* simplehittype <0|1|2> - set type of simple hitsound ('FeedbackType' must be set to 1), 0 - hit1, 1 - like lowest CPMA, 2 - like normal CPMA
+* feedbackline <0..200> - 'FeedbackType' must be set to 3. if FeedbackLine = 70 and Damage == 70 sound will be the loudest (100%) [dont't work]
+* overlaypos <X> <Y> - sets overlay's position. where:
+<X> - X coordinate of the overlay (horizontal)
+<Y> - Y coordinate of the overlay (vertical)
+example: setoverlay 10 80 - set overlay in left/top corner
+To set overlay in right/top corner you should use: setoverlay 600 80 (depends of screen resolution, experiment with that)
+* overlayshowself <0|1> - show self in overlay
+* overlaybackground <R> <G> <B> <A> - sets overlay background color, passed values are 1..255, <A> - opacity (255 = 100%)
+* overlaysize <0..8> - sets overlay's size (0 - disabled)
+* overlaymetric <0|1|2> - show distance in different values, 0 - in meters, 1 - feets, 2 - yards
+* teamoverlay <0|1> - enable/disable team overlay
+* drawdamageindicators <0|1> - drawing damage indicators
+* classicsnipersmoke <0|1> - classic sniper rifle's smoke effect
+* weaponviewshake <0|1> - view shaking for some weapons while firing
+* pickupconsolemessages <0|1> - pickup messages in console
+* ready - (in warmup) you are ready to play
+* notready - (in warmup) you are not ready to play
+* teamready - (in warmup for teamcaptains) your players of your team are ready
+* timeout - calls timeout
+* timein - calls timein
+* brightskins <0|1> - enable/disable force models & epic bright skins
+* enemyskin <skin/color/glow> - sets enemy skin (requres BrightSkins = 1)
+* teamskin <skin/color/glow> - sets teammate skin (requres BrightSkins = 1)
+where:
+skin - skin's name (Gorge, Malcolm, Brock, Gaargod, Axon, Sapphire, Rylisa, Cathode, Ophelia, Enigma)
+color - maybe blue, red or none
+glow - 0..255
+example 1: enemyskin gorge/blue/250
+example 2: enemyskin reinha/none/200
+* updateskins - force update skins (requres BrightSkins = 1)
+* enemybones <A/B/C> - sets enemy bones scale (requres BrightSkins = 1)
+where: A - scale (in percents) for left foot, B - for right foot, C - for head (Max 25)
+example: enemybones 25/25/10
+* crosshairteaminfo <0|1> - display teammate names and some info (health, shield) when pointing at them
+* togglebrightskins - enable/disable brightskins
+* vote - cast your vote. Ex. 'vote yes' or 'vote no'.
+* cc - enable/disable autocompletion of some console commands.
+* rules - shows server settings.
+* players - shows all PlayerIDs (for kicking)
+* shortdeathmessages <0|1> - colored short death messages (to disable it you need restart UT)
+* overlaylocationbetween <0|1> - Additional location information in teamoverlay
+* nododgingdelay <0|1> - no delay between dodges (requres bServerNoDodgingDelay = True on the server)
+* captains - shows players that are team captains
+
+VOTING
+======
+Use console command 'callvote <parameter> <value>'
+<parameter>:
+map - map (<value> can be part of map name)
+mutespecs - mute spectators
+weaponstay (or ws) - weapon stay
+timelimit (or tl) - Time Limit (0 not allowed)
+minplayers - minimum players
+maxplayers - maximum players (0 not allowed)
+kick <PlayerID> - kick player with ID = <PlayerID>
+restart - restart current game
+game - new gametype
+ usage: callvote game <type> <map>
+ <type> - "1on1" or "tdm"
+ <map> - part of full of map name
+isp - interaction shiled plus (brutal anticheat)
+dd (or doubledamage) - double damage
+altws - alternative weapon settings (see below)
+dodgedelay <0|1>
+nododgedelay <1|0>
+fastws <1|0> - fast weapon switching (without boost dodging)
+
+TEAM GAME CHAT TOKENS (CASE SENSITIVE)
+======================================
+%e - The last player to hit you
+%u - last picked up powerup (Double Damage, Mega Health, Shield Pack)
+%n - last picked up weapon
+%i - last picked up item (weapon or powerup)
+%c - nearest accessible/inaccessible item (weapon or powerup)
+
+====================
+*** INSTALLATION ***
+====================
+1. Extract *.u and *.ucl files from archive to your UT2004/System folder.
+2. For server:
+* Open your server config ini file (for example, UT2004.ini), look for the lines
+starting with "ServerPackages=" and add the following line to it:
+ServerPackages=UnDefy10
+You can then run a server through UT2004 or use UCC. UCC's syntax would be like this:
+ucc server dm-deck17.ut2?game=xGame.xDeathMatch?Mutator=UnDefy10.zMain + plus any extra parameters
+
+=======================
+*** SERVER SETTINGS ***
+=======================
+Set in game ini file (UT2004.ini or similar):
+Most of config vars are self explainable.
+
+Timeouts - number of timeouts in one match (default = 1)
+TimeoutLength= - timeout length in seconds (default = 60)
+ForceRespawnTime - force respawn time, if 0 ignoring (depends of bForceRespawn) (default = 8)
+bAllowTeamOverlay - team overlay on a client (default = True)
+WarmUpSeconds - warmup time (-1 - disabled, 0 - unlimited, > 0 - this time) (default = 0)
+VotingTime - vote time (0 - disabled) (default = 30)
+bAllowBrightSkins - client force models & epic bright skins (default = True)
+bServerStats - weapon stats (beta!) (hits, accuracy) (default = False)
+bInteractionShield - interaction shield (anticheat) WARNING! if UTComp, than last version (17a) is necessary
+Or you can add UnDefy10.InteractionShieldPlus to ServerActors (ServerActors=UnDefy10.InteractionShieldPlus)
+ATTENTION!!! Don't use it with non-standart game type or non-standart mutators.
+If unknown client interaction be found, client will be kicked.
+
+=============================
+*** OTHER SERVER SETTINGS ***
+=============================
+bServerNoDodgingDelay <True|False>
+No delay between dodges. Default = False (0.35).
+bAllowHitSounds - 
+bDoubleDamage - 
+bAdrenaline - 
+bSuperWeapons - 
+VotingPassPercent
+bAllCaptains
+bServerNoDodgingDelay
+bFastWeaponSwitching
+
+===================================
+*** ALTERNATIVE WEAPON SETTINGS ***
+===================================
+bAltWeaponSettings - Enable/Disable alt. weapon settings
+If True:
+Lightning Gun child arcs = 1 (default 3)
+Shield Gun: MaxAmmo = 80, Ammo Per Fire = 20
+ShockRifle: FireRate = 0.8 (default 0.7)
+Note: need restart if called this option in a vote.
+
+===============================
+*** COMMAND LINE PARAMETERS ***
+===============================
+Timeouts <0..9>
+AllowHitSounds <True|False>
+WarmUpSeconds <-1|0|Integer>
+DoubleDamage <True|False>
+Adrenaline <True|False>
+AllowBrightSkins <True|False>
+VotingTime <0..255>
+bIntShield <True|False>
+
+=================
+*** CHANGELOG ***
+=================
+* version 10 (1 Aug 2009)
+- teamoverlay: new setting value bOverlayLocationBetween (thanks to Nina Pronina)
+- small fixes in 'InteractionShield'
+- added alternative weapon settings
+- fixed teamoverlay bug in server side demo
+- new gameplay option: bServerNoDodgingDelay / bNoDodgingDelay
+- new voting parameters
+- some useful information in scoreboard (F1)
+- added ability to configure mutator in menu
+
+* version 9 (30 Jan 2009)
+- improved and fixed 'InteractionShield' (now can be downloaded from server)
+- fixed force models startup bug
+
+* version 8 (18 Jan 2009)
+- mutator changed name to 'UnDefy'
+- removed limitation for location marks in team overlay
+- added some info to GetServerDetails()
+- fixed talking icon and autocompletion features
+- enemycam: added pawn info (health/shield [weapon] ammostatus)
+- added new voting parameters
+- added some new console commands
+- weapon stats (beta)
+- now ready/notready status not shows in scoreboard
+- teamoverlay colors: purple (has double damage), yellow (flag holder)
+- new special info field in teamoverlay
+- new: (colored) short death messages 
+
+* version 7 (25 Oct 2008)
+- added 'Talking Icon' mutator
+- added console comnand 'rules'
+- some changes in ModifyPlayer function
+- fixed bug allowed timeout in warmup
+
+* version 6 (18 Oct 2008)
+- timeout: can't be called in overtime
+- added 'interaction shield' mutator
+- added console commands autocompletion mode
+- now in original scoreboard in warmup indicates ready/notready status
+- fixed stopped timer when overtime
+- fixed zero damage hitsound bug
+- fixed bug after warmup ends
+- removed timeout messages during demo playback
+
+* version 5 (8 Sep 2008)
+- added 'mytime'
+- now timeout may be called by team captain in team deathmatch
+- added 'about' tab in game menu
+- refactored force respawn
+- fixed 'DrawCrosshairTeamInfo'
+- added 'DoubleDamage' command line parametr
+- added voting (console command 'callvote')
+- added 'ToggleBrightSkins' console command
+- no superweapons in warmup
+- some small changes
+
+* version 4 (26 Aug 2008)
+- not released
+
+* version 3 (11 May 2008)
+- added crosshairteaminfo
+- 'timeout' moved to separate class
+- added brightskins and some features manipulate with skins
+- added warmup
+- added hitsounds
+- added another team overlay with alternative location names
+- added new console commands SetOverlay, FeedbackType, etc.
+- added another 'forcerespawn'
+- changed 'enemycam' size 0..100 (100 is 1/4 of screen)
+
+
+* version 2 (19 Apr 2008)
+- added console exec-commands now "mutate calltimeout" same as "timeout" (m1xEr)
+- added team chat tokens: %e, %u, %n, %i
+- added 'enemycam' feature
+- changed var names
+- added new commands classicsnipersmoke, drawdamageindicators, etc.
+
+* version 1 (18 Apr 2008)
+- first release

@@ -1,0 +1,114 @@
+- multi dodging глючно работает
+- net code без замены оружия
+- проверить load ammo когда умираешь
+- exec enemycampos
+- голосовать за мутаторы, CacheManager.GetMutatorList
+- какая-то ошибка связанная с MyHUD в final count down
+- информация ready/not ready в Scoreboard
+- когда открываем консоль там сверху или сбоку тоже пишем время и куда демка пишется (можно и информацию о Undefy 2004).
+
+BUGS:
+server side demo - не показывается таймер для дд
+не работает darken dead body feature
+
+done: - настройки через графическое меню мутаторов
+done: - F1 - если записывается демка - показываем имя демки CurrentDemoName
+done: - gameplay settings:
+done: lgarcs = 1 , shock, fastweapons switch, shield initial ammo 80, за выстрел 20
+done: -- убрать LightningGunArcs, сделать on/off один луч
+done: -- нет задержки на доджинег
+done: - проблема с локациями в демке на сервере не загружается interaction, из-за MyInfo.MyPawn не реплицируется
+done: - InteractionShield+: Subsystem.GetPropertyText("CacheExt") @ Subsystem.GetPropertyText("CachePath")
+done: - InteractionShield+: sanca ut cheat
+done: - InteractionShield+: проверять MyHUD, MyHUD.Scoreboard
+done: - InteractionShield+: не нужно проверять на стадии подключения, только уже в самой игре
+done: - InteractionShield+: проверять хэш опционально (по умолчанию не надо)
+done: - InteractionShield+: кроме InteractionShield проверять HUD.HudOverlay, CameraEffects
+done: - проверить lgarcs в уткомпе
+done: - дополнительный NUMCELLS в оверлее
+done: - проверить можно ли удлить значения из массива-конфига class'GameEngine'.default.ServerActors
+done: - нужна переменная GameEngine чтобы проверять ServerActors
+done: - настроить bDarkenDeadBodies
+done: перенести куда нибудь в нормальное место IsWarmup zTeamGameReplicationInfo
+done: - InteractionShield+: в демке отключается если загружен RypelCam
+failed: (невозможно без замены xPlayer) Возможность переключения на оружие, к которому нет боеприпасов
+done: invite <номер_игрока> Приглашение игроку войти в капитанскую команду.
+done (hidden): muzzleFlash <1|0>
+done: shotdeathmessages
+done: info not ready messages: You are ready/not ready
+done: info not ready messages -> warmup messages
+todo: индикацию ready сделать по дргому надо ловить нажатие кнопок
+
+todo: в оверлее значки капитана команды
+todo: разделить на LRI бота и человека
+done: enemy view информация
+done: сохранять после ипользования консольных команд
+todo: выкинуть в спеки, проигравшего в дуэли
+Оружие:
+done: - убрать NumArcs из Lightning Gun (искры)
+zMain
+// tokens: last picked super weapon
+// tokens: ближайший не/доступный поверап
+// tokens: ближайший не/доступный оружие
+// todo: рекламные фишки
+// todo: разделение маленького и большого щита (HUD)
+// todo: глобальная настройка для клубов т.е. юзер создает себе бит маску выполняет команду и все его настройки включаются
+// todo: расположение оружия по другому
+// todo: попробовать перехватить редимер в chekreplacements
+// todo: разделение чата и сообщений убийств
+// todo: нужна функция которая "причесывает" по классам
+// done: после начала матча нельзя присоедениться к игре
+// todo: свои символы в командных режимах
+// todo: DummyBackground
+// потестить dynamicarray.remove s commmandletom
+// todo: перенести все настройки в gamereplication info
+
+zInteraction
+// todo: попробовать выключить bRequiresTick если тварь EnemyCamPawn найдена
+// todo: exec maplist
+// todo: вращать камеру по вертикали тоже
+// done: если переключилась на того от кого камера, то меняем
+// done: показывать имя игрока от которого смотрим (чуть выше нижней границы)
+// done: teamready
+// done: показывать камеру только для PlayerReplicationInfo.bOnlySpectator
+// done: enemycam: когда тварь умерла оставлять над ней камеру еще нес-ко секунд
+// todo: разделить сообщения об убийствах и чат (если есть двоеточние...)
+// done: выключить спеков во время игры
+// done: избавиться от стейтов InConsole
+
+zLinkedReplicationInfo
+// todo: надо разделить, что нанесли себе или команде, а что противнику
+
+MyIcon
+// todo: для команды своим цветом
+
+zTeamHudOverlay
+// todo: обновлять раз в секунду
+// может структуру перенести в маин d
+// предыдущая позиция в скобках Rocket Launcher (Link Gun)
+// консольную комнаду которая по бмт маске устанавливает нужные параметры
+// !! сортировка
+// не встраивать тучу опций в одну команду
+// todo: для спеков включить оверлей
+
+zTimeout
+// done: если тдм, то капитаны могут вызывать таймаут
+// done: записывать кто сколько раз вызвал таймаут в zLinkedReplicationInfo TimeoutCalls
+// done: нельзя вызывать таймаут в овертайме (я так решил)
+// fixed: таймаут вызывается в разминке (уткомп)
+
+zGameRules
+// todo: через netdamage кто в кого стрелял (токены)
+// done: если повредил сам себя то ничего не длеать
+// done: отключить на сервере хитсаунды для этого игрока
+// done: когда идет вармап не набирать очки
+// done: объеденить Linked.SetLastPickupItem() и Linked.ReCountAmmo()
+// done: в вармапе не считать статистику (потом сбрасывается)
+
+zVoting
+// done: ограничения на слишком частые вызывания голосования
+// done: LastCaller
+// done (need check): голосовать за тикрейт
+// done: избавится от этой структуры TravelURL[5]
+// done: голосовать за любой параметр типа MaxPlayers 2
+// done: bPartitionSpectators

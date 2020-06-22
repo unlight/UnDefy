@@ -1,0 +1,38 @@
+class MyMiddleGamePanel extends MidGamePanel;
+
+// разделы: хитсаунды, тимоверлей, хад и остальное
+var SectionHitSounds HitSounds;
+var bool bInitialized;
+
+function InitPanel(){
+	bInitialized = True;
+}
+
+event GUIComponent AppendComponent(GUIComponent NewComp, optional bool SkipRemap){
+	if(zComponentGroup(NewComp) != None){
+		zComponentGroup(NewComp).InitComponent(Controller, Self);
+		zComponentGroup(NewComp).PostInitComponent();
+	}
+	return Super.AppendComponent(NewComp, SkipRemap);
+}
+
+function CreateElements(){ // hitsounds
+	HitSounds = new class'SectionHitSounds';
+	HitSounds.SetPosition(0.01, 0.01, 0.4, 0.4);
+	AppendComponent(HitSounds);
+	
+	//HitSounds = new class'WindowSectionHitSounds';
+	//HitSounds.SetPosition(0.50, 0.01, 0.40, 0.7);
+	//AppendComponent(HitSounds);
+}
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Super.InitComponent(MyController, MyOwner);
+	CreateElements();
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{}

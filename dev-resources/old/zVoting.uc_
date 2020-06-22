@@ -1,0 +1,201 @@
+class zVoting extends Mutator CacheExempt;
+
+var array<string> Maps;
+var array<string> FixedMaps;
+var PlayerReplicationInfo Caller;
+var byte Voted[2];
+var string VotedString;
+// можно сократить
+var string TravelURL[5]; // 0 - map, 1 - game 2 - mutators, 3 - options
+var byte VotingTime;
+
+replication{
+	reliable if(bNetDirty && Role == Role_Authority) VotedString, Voted;
+}
+
+function PostBeginPlay(){
+	local int i;
+	local string S;
+	Level.Game.LoadMapList("DM", Maps);
+	for(i = 0; i < Maps.Length; i++){
+		S = Repl(Maps[i], "1on1-", "");
+		S = Repl(S, "DE-", "");
+		FixedMaps[i] = Repl(S, "DM-", "");
+	}
+}
+
+function string AllowCallVote(PlayerController PC){
+	if(IsInState('VoteInProgress')) return "A vote already in progress!";
+	if(PC.PlayerReplicationInfo.bOnlySpectator) return "You are Spectator!";
+}
+
+function Mutate(string MutateString, PlayerController PC){
+	local string Reason, S;
+	S = Left(MutateString, 8);
+	if(S == "CallVote"){
+		Reason = AllowCallVote(PC);
+		if(Reason != ""){
+			Reason = class'zUtil'.static.Paint("^1" $ Reason);
+			PC.ClientMessage(Reason);
+		}else CallVote(MutateString, PC);
+	}else if(S == "I'm vote"){
+		Reason = AllowCastVote(PC);
+		if(Reason != ""){
+			Reason = class'zUtil'.static.Paint("^1" $ Reason);
+			PC.ClientMessage(Reason);
+		}else CastVote(MutateString, PC);
+	}
+
+}
+
+function string AllowCastVote(PlayerController PC){
+	local zLinkedReplicationInfo Linked;
+	if(!IsInState('VoteInProgress')) return "No vote in progress!";
+	Linked = class'zLinkedReplicationInfo'.static.Get(PC.PlayerReplicationInfo);
+	if(Linked.bVoted) return "You already voted!";
+}
+
+function CastVote(string S, PlayerController PC){
+	local byte i, VoteMass;
+	local zLinkedReplicationInfo Linked;
+	S -= "I'm vote";
+	if(bool(S)) i = 1; else i = 0;
+	Voted[i]++;
+	Linked = class'zLinkedReplicationInfo'.static.Get(PC.PlayerReplicationInfo);
+	Linked.bVoted = True;
+	VoteMass = 100 / Level.Game.GetNumPlayers();
+	if(Voted[1] * VoteMass > 50) VotePassed();
+	else if(Voted[0] * VoteMass > 50) VoteFailed();
+}
+
+function VotePassed(){
+	BroadcastLocalizedMessage(class'VoteMessage', -3);
+	GotoState('');
+	Level.ServerTravel(GetTravelURL(), False);
+}
+function VoteFailed(){
+	BroadcastLocalizedMessage(class'VoteMessage', -4);
+	GotoState('');
+}
+
+function ResetVote(){
+	local byte i;
+	local zLinkedReplicationInfo Linked;
+	Caller = None;
+	Voted[0] = 0; Voted[1] = 0; VotedString = "";
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		Linked = class'zLinkedReplicationInfo'.static.Get(Level.GRI.PRIArray[i]);
+		if(Linked != None) Linked.bVoted = False;
+	}
+}
+function CallVote(string S, PlayerController P){
+	S -= "CallVote";
+	ResetVote();
+	SearchMode(S);
+	SearchMap(S);
+	if(VotedString != ""){
+		Caller = P.PlayerReplicationInfo;
+		GotoState('VoteInProgress');
+	}
+
+}
+
+state VoteInProgress{
+	function EndState(){
+		Disable('Timer');
+	}
+	function Timer(){
+		local Controller C;
+		local PlayerController P;
+		for(C = Level.ControllerList; C != None; C = C.NextController){
+			P = PlayerController(C);
+			if(P != None){
+				P.ReceiveLocalizedMessage(class'VoteMessage', -1, Caller); // -1 = smb called vote!
+
+				//PlayerController(C).ClearProgressMessages();
+				//PlayerController(C).SetProgressTime(5);
+				//PlayerController(C).SetProgressMessage(0, VotedString, class'Canvas'.Static.MakeColor(255,255,255));
+
+				P.ReceiveLocalizedMessage(class'VoteMessage', 1, None, None, Self); // 1 - what a vote
+				P.ReceiveLocalizedMessage(class'VoteMessage', -2, None, None, Self); // - who how voted
+			}
+		}
+		if(--VotingTime <= 0) GotoState('');
+	}
+	Begin:
+	VotingTime = zMain(Owner).VotingTime;
+	BroadcastLocalizedMessage(class'VoteMessage', -1, Caller, Caller);
+	SetTimer(1, True);
+}
+
+
+function string GetTravelURL(){
+	local byte i;
+	local string S;
+	for(i = 0; i < ArrayCount(TravelURL); i++) S $= TravelURL[i];
+	return S;
+}
+
+function SearchMode(string MutateString){
+	local string Modes[2];
+	local int i, k, MinPlayers;
+	local array<string> Matches;
+	Modes[0] = "1on1/1v1/1x1";
+	Modes[1] = "2on2/2v2/2x2";
+	for(i = 0; i < ArrayCount(Modes); i++){
+		if(Modes[i] == "") continue;
+		Matches.Length = 0;
+		Split(Modes[i], "/", Matches);
+		for(k = 0; k < Matches.Length; k++){
+			if(class'zUtil'.static.PregMatch(MutateString, Matches[k])){
+				PlusString(VotedString, Matches[0]);
+				if(i == 0){
+					TravelURL[1] = "?game=xGame.xDeathMatch";
+					MinPlayers = Min(2, DeathMatch(Level.Game).MinPlayers);
+					TravelURL[3] = "?TimeLimit=15?DoubleDamage=False?MaxPlayers=2?MinPlayers=" $ MinPlayers;
+				}else if(i == 1){
+					TravelURL[1] = "?game=xGame.xTeamGame";
+					MinPlayers = Min(4, DeathMatch(Level.Game).MinPlayers);
+					TravelURL[3] = "?TimeLimit=20?DoubleDamage=True?MaxPlayers=4?MinPlayers=" $ MinPlayers;
+				}
+				return;
+			}
+		}
+	}
+}
+
+function SearchMap(string MutateString){
+	local int i, j;
+	local array<string> A;
+	if(class'zUtil'.static.PregMatch(MutateString, "Restart")){
+		TravelURL[0] = "?restart";
+		VotedString = "Restart Map";
+		return;
+	}
+	Split(MutateString, " ", A);
+	for(j = 0; j < A.Length; j++){
+		A[j] = class'zUtil'.static.Trim(A[j]);
+		if(A[j] == "") continue;
+		for(i = 0; i < FixedMaps.Length; i++){
+			if(!class'zUtil'.static.PregMatch(FixedMaps[i], A[j])) continue;
+			TravelURL[0] = Maps[i];
+			PlusString(VotedString, Maps[i]);
+			return;
+		}
+	}
+}
+
+static function PlusString(out string S1, string S2){
+	if(S1 != "") S1 @= S2;
+	else S1 = S2;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+//	bNetTemporary=True
+	RemoteRole=ROLE_SimulatedProxy
+	bAlwaysRelevant=True
+}

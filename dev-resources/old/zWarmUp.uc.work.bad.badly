@@ -1,0 +1,77 @@
+class zWarmUp extends Info;
+
+var int WarmUpTime;
+var int iCountDown;
+var bool bWarmUpInitialized;
+
+event PreBeginPlay(){
+	Super.PreBeginPlay();
+	Debug("zWarmUp:PreBeginPlay");
+	SetTimer(1, True);
+}
+function InitializeWarmUp(){
+	WarmUpTime = zMain(Owner).WarmUpSeconds;
+	DeathMatch(Level.Game).RemainingTime = WarmUpTime;
+	bWarmUpInitialized = True;
+}
+
+function Timer(){
+	if(!bWarmUpInitialized) InitializeWarmUp();
+	if(Level.Game.GetNumPlayers() < 1){
+		DeathMatch(Level.Game).RemainingTime = WarmUpTime;
+		return;
+	}
+	if(DeathMatch(Level.Game).RemainingTime <= 0) GotoState('CountDown');
+//	if( CheckAllReady() ){
+//		Debug("All players are ready!");
+//		GotoState('CountDown');
+//	}
+}
+
+state CountDown{
+	function BeginState(){ // need freeze timer
+//		Debug("BeginState:CountDown");
+//		zGameReplicationInfo(Level.Game.GameReplicationInfo).bFinalCountDown = True;
+		iCountDown = 11;
+		DeathMatch(Level.Game).RemainingTime = 1;
+		BroadcastLocalizedMessage(class'FinalCountDown', iCountDown);
+		SetTimer(1, True);
+	}
+	function Timer(){
+		local Actor A;
+		iCountDown = iCountDown - 1;
+		BroadcastLocalizedMessage(class'FinalCountDown', iCountDown);
+		if(iCountDown <= 0){
+			foreach DynamicActors(class'Actor', A) A.Reset();
+			DeathMatch(Level.Game).bFirstBlood = False;
+			Level.Game.Reset();
+			Level.Game.StartMatch();
+			Destroy();
+		}
+	}
+}
+
+// Warning: zWarmUp dm-gael.zWarmUp (Function SM01.zWarmUp.CheckAllReady:00CC) Accessed None 'C'
+function bool CheckAllReady(){ // неправильно
+	local Controller C;
+	local int ReadyPlayersCount;
+	ReadyPlayersCount = 0;
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		if( C.IsA('PlayerController') && C.PlayerReplicationInfo.bReadyToPlay ) ReadyPlayersCount++;
+		if( (Level.GRI.RemainingTime % class'WarmUpMessage'.default.Lifetime) == 0) C.BroadcastLocalizedMessage(class'WarmUpMessage');
+//		Debug("C:" @ string(C) @ "ReadyPlayersCount:" @ ReadyPlayersCount @ "Ready:" @ C.PlayerReplicationInfo.bReadyToPlay);
+	}
+	return ( ReadyPlayersCount >= Level.Game.NumPlayers);
+}
+
+simulated function Debug(coerce string S){
+	local string String;
+	local PlayerController PC;
+	String = string(Level.TimeSeconds) @ "ACM:" @ S;
+	PC = Level.GetLocalPlayerController();
+	Level.Game.BroadCast(PC, String);
+	Log(String);
+}
+
+defaultproperties{
+}

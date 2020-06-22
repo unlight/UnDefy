@@ -1,0 +1,4 @@
+//	if(Killer == None && DamageType == class'DamageType' && Killed.Location == HitLocation){
+//		// change team
+//		//Debug("change team" @ Killed.GetHumanReadableName());
+//	}

@@ -1,0 +1,119 @@
+class MyMiddleGamePanel extends MidGamePanel;
+
+var automated GUISectionBackground sb_Section, sb_Section2, sb_Main;
+
+var automated array<GUIMenuOption> Options;
+var automated array<moCheckBox> CheckBoxes;
+var automated GUITabControl TabPanel;
+
+var(MyPosition) editinline float LeftPadPerc;
+var(MyPosition) editinline float UpperPadPerc;
+var(MyPosition) editinline float RightPadPerc;
+var(MyPosition) editinline float LowerPadPerc;
+var(MyPosition) editinline int NumberOfColumns;
+var(MyPosition) editinline float ColumnPadding; 
+
+function InitPanel(){
+	local int i;
+	local float NewWinTop;
+	Debug("InitPanel" @ "MyButton" @ MyButton);
+	NewWinTop = sb_Main.WinTop + 0.05;
+	//for(i = 0; i < Options.Length; i++) sb_Main.ManageComponent(Options[i]);
+	for(i = 0; i < CheckBoxes.Length; i++){
+		CheckBoxes[i].SetCaption("CheckBox #"$i);
+		CheckBoxes[i].SetHint("CheckBox Hint #"$i);
+		CheckBoxes[i].bAutoSizeCaption = True;
+		CheckBoxes[i].WinTop = NewWinTop;
+		CheckBoxes[i].WinLeft = 0.1;
+		CheckBoxes[i].bScaleToParent = True;
+		CheckBoxes[i].bBoundToParent = True;
+		NewWinTop = CheckBoxes[i].WinTop + 0.05;
+		sb_Main.ManageComponent( CheckBoxes[i] );
+	}
+}
+
+function OnShow(){
+	Debug("OnShow");
+	//AutoPositionOn(CheckBoxes, sb_Main, LeftPadPerc, UpperPadPerc, RightPadPerc, LowerPadPerc, NumberOfColumns, ColumnPadding);
+	//AutoPosition(CheckBoxes, LeftPadPerc, UpperPadPerc, RightPadPerc, LowerPadPerc, NumberOfColumns, ColumnPadding);
+}
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	Debug("InitComponent" @ MyController @ MyOwner);
+	Super.InitComponent(MyController, MyOwner);
+	//Section = GUISectionBackground(Controls[0]);
+	
+	
+	//sb_Main.ManageComponent( Options[0] );
+	//sb_Main.ManageComponent( Options[1] );
+	
+	//Options[2].SetCaption("Test 2");
+	//Options[2].OnChange = InternalOnChange;
+	//Options[2].OnSaveINI = InternalOnSaveINI;
+	//sb_Main.ManageComponent( Options[2] );
+	
+	//TabPanel.AddTab("Tab 1", string(class'GUITabPanel'));
+	//TabPanel.AddTab("Tab 2", string(class'GUITabPanel'));
+}
+
+function OnLoadINI(GUIComponent C, string S){
+	Debug("OnLoadINI" @ C @ S);
+}
+function string OnSaveINI(GUIComponent C){
+	Debug("OnSaveINI" @ C);
+}
+
+function InternalOnChange(GUIComponent Sender){
+	Debug("InternalOnChange" @ Sender);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{
+	IniOption="@Internal"
+	bFillHeight=True
+
+	Begin Object class=GUISectionBackground Name=Background2
+		Caption="Options"
+		WinWidth=1.0
+		WinHeight=1.0
+		WinLeft=0.0
+		WinTop=0.0
+		bScaleToParent=True
+		bBoundToParent=True
+	End Object
+	sb_Section=Background2
+//
+//	
+	Begin Object class=moSlider Name=moSlider1
+		Caption="Test 2"
+		MinValue=0
+		MaxValue=250
+		bIntSlider=True
+		OnChange=InternalOnChange
+		LabelJustification=TXTA_Center
+		ComponentJustification=TXTA_Center
+	End Object
+	Options(0)=moSlider1
+//	
+	Begin Object class=moCheckBox Name=Option1
+		Caption="Test 1"
+		OnChange=InternalOnChange
+	End Object
+	Options(1)=Option1
+//
+	Begin Object class=moCheckBox Name=Option2
+	End Object
+	Options(2)=Option2
+	
+	Begin Object class=moCheckBox Name=moCheckBox1
+	End Object
+	CheckBoxes(0)=moCheckBox1
+	CheckBoxes(1)=moCheckBox1
+	CheckBoxes(2)=moCheckBox1
+	CheckBoxes(3)=moCheckBox1
+	CheckBoxes(4)=moCheckBox1
+	CheckBoxes(5)=moCheckBox1
+}

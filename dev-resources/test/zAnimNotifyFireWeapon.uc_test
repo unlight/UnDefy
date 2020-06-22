@@ -1,0 +1,8 @@
+class zAnimNotifyFireWeapon extends AnimNotify_FireWeapon within PlayerController;
+
+event Notify(Actor A){
+	class'zUtil'.static.Debug("Notify" @ A.GetHumanReadableName(), Outer);
+	Super.Notify(A);
+}
+
+defaultproperties{}

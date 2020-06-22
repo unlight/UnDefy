@@ -1,0 +1,99 @@
+class zLinkedReplicationInfoB extends LinkedReplicationInfo;
+
+var(Item) string LastPickupItem;
+var(Item) string LastPickupWeapon;
+var(Item) string LastPickupPowerUp;
+//var(Team) bool bTeamCaptain;
+
+//struct DamageInfo{
+//	var class<DamageType> Type;
+//	var int Value;
+//	var int Hits;
+//	var bool bSelfTeam; // no need
+//};
+//var(DamageStats) array<DamageInfo> Given;
+//var(DamageStats) array<DamageInfo> Received;
+//var(DamageStats) array<DamageInfo> SelfTeamDamage;
+
+var byte MyWeapon;
+//var string MyWeapon;
+var vector MyLocation;
+var byte MyHealth;
+var byte MyShield;
+var byte MySmallShield;
+
+var zBeaconsB Bikons;
+
+replication{
+	unreliable if(Role == Role_Authority && !bNetOwner) MyLocation, MyWeapon, MyHealth, MyShield, MySmallShield;
+}
+
+event PostBeginPlay(){
+	Bikons = New(Self) class'Unreal64Pack4.zBeaconsB';
+	Log("==================================");
+	Bikons.InitB();
+}
+
+//function UpdateDamage(out array<DamageInfo> DamageInfoArray, class<DamageType> DamageType, int Damage){
+//	local DamageInfo LocalDamageInfo;
+///*	i = DamageInfoArray.Length;
+//	if(i != 0 && DamageInfoArray[i].Type == DamageType && DamageInfoArray[i].bSelfTeam == bSelfTeam){
+//		i = i - 1;
+//		DamageInfoArray[i].Value += Damage;
+//		DamageInfoArray[i].Hits += 1;
+//		return;
+//	}*/
+//	LocalDamageInfo.Type = DamageType;
+//	LocalDamageInfo.Value = Damage;
+//	LocalDamageInfo.Hits = 1;
+//	DamageInfoArray[DamageInfoArray.Length] = LocalDamageInfo;
+//	
+//}
+//function GiveDamage(class<DamageType> DamageType, int Damage){
+//	UpdateDamage(Given, DamageType, Damage);
+//}
+//function ReceiveDamage(class<DamageType> DamageType, int Damage){
+//	UpdateDamage(Received, DamageType, Damage);
+//}
+
+function SetLastPickupItem(string S, byte Type){
+	LastPickupItem = S;
+	switch(Type){
+		case 1: LastPickupWeapon = S; break;
+		case 2: LastPickupPowerUp = S; break;
+	}
+}
+
+static function zLinkedReplicationInfoB Get(PlayerReplicationInfo PRI){
+	local LinkedReplicationInfo LRI;
+	if(PRI.CustomReplicationInfo == None) return None;
+	if(PRI.CustomReplicationInfo.IsA('zLinkedReplicationInfoB')) return zLinkedReplicationInfoB(PRI.CustomReplicationInfo);
+	for(LRI = PRI.CustomReplicationInfo.NextReplicationInfo; LRI != None; LRI = LRI.NextReplicationInfo){
+		if(LRI.IsA('zLinkedReplicationInfoB')) return zLinkedReplicationInfoB(LRI);
+	}
+	return None;
+}
+
+static function Append(out PlayerReplicationInfo PRI){
+	local LinkedReplicationInfo LRI;
+	if(Find(PRI)) return; // check for existing linked RI
+//	if(PRI.Owner == None) return;
+	LRI = PRI.Spawn(default.Class, PRI.Owner); // spawn a new one
+	LRI.NextReplicationInfo = PRI.CustomReplicationInfo;
+	PRI.CustomReplicationInfo = LRI;
+}
+
+static function bool Find(PlayerReplicationInfo PRI){
+	local LinkedReplicationInfo LRI;
+	for(LRI = PRI.CustomReplicationInfo; LRI != None; LRI = LRI.NextReplicationInfo){
+		if(LRI.IsA('zLinkedReplicationInfoB')) return True;
+	}
+	return False;
+}
+
+static simulated function Debug(coerce string S, Actor A){
+	class'zUtil'.static.Debug(S, A);
+}
+
+defaultproperties{
+}

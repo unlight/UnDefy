@@ -1,0 +1,36 @@
+class VoteMessage extends zLocalMessage;
+
+//static function
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	if(N == -1) default.bFadeMessage = True;
+	Super.ClientReceive(P, N, R1, R2, O);
+}
+
+
+// бит маска:
+// 1(0) - 1v1,
+// 2(1) - 2v2,
+// 4(2) - рестарт карты,
+// 8(3) - смена карты на...
+
+static function string GetString(optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	local string S, MapName;
+	local zVotingReplicationInfo VRI;
+	local array<byte> Mask;
+	local byte i;
+	VRI = zVotingReplicationInfo(O);
+	MapName = Repl("(%S)", "%S", VRI.VotedMap);
+	Mask = class'zUtil'.static.BitMaskArray(VRI.VotedMask);
+	if(bool(Mask[0])) S @= "1v1";
+	if(bool(Mask[2])) S @= "Restart Map";
+	if(bool(Mask[3])) if(S != "") S @= MapName; else S @= "Change map" @ MapName;
+	return S;
+}
+
+defaultproperties{
+	Lifetime=20
+	bFadeMessage=False
+	DrawColor=(R=130,G=130,B=130,A=250)
+	PosY=0.348
+}

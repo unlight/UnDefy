@@ -1,0 +1,16 @@
+class NavigationMark extends Info; // Info // SmallNavigationPoint Object
+
+var vector Coordinate;
+var string ItemName;
+var NavigationMark NextNavigationMark;
+
+replication{
+	reliable if(Role == Role_Authority) Coordinate, ItemName, NextNavigationMark;
+}
+
+function Add(NavigationMark M){
+	if(NextNavigationMark != None) NextNavigationMark.Add(M);
+	else NextNavigationMark = M;
+}
+
+defaultproperties{}

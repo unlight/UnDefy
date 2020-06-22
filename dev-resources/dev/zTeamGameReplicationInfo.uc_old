@@ -1,0 +1,90 @@
+class zTeamGameReplicationInfo extends zGameReplicationInfo;
+// сюда пойдет все то что общее для всех игроков
+// здесь можно замутить апдейтер или голосование
+var PlayerReplicationInfo TeamCaptains[2];
+var float NextUpdateTime; // Team Captains
+var byte TeamTimeoutsCount[2];
+// Location Marks
+var array<string> LMNames;
+var array<vector> LMCoordinates;
+
+auto state StartUp{
+	Begin:
+	GetLocationMarks();
+	GotoState('');
+}
+
+function PostBeginPlay(){
+	Super.PostBeginPlay();
+	SetTimer(1, True); // может заюзать тик?
+	Debug("PostBeginPlay");
+}
+
+function CheckTeamCaptains(){
+	local int Index;
+	if(Level.TimeSeconds < NextUpdateTime) return;
+	NextUpdateTime = Level.TimeSeconds + 2 + FRand();
+	for(Index = 0; Index < 2; Index++) if(TeamCaptains[Index] == None || TeamCaptains[Index].Team == None || TeamCaptains[Index].Team.TeamIndex != Index) SetTeamCaptain(Index);
+}
+
+event Timer(){
+	local Controller C;
+	local zLinkedReplicationInfo OtherLRI;
+	// maybe move in zLinkedReplicationInfo
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		if(C.Pawn == None || C.PlayerReplicationInfo == None) continue;
+		OtherLRI = GameRules.GetLRI(C.PlayerReplicationInfo);
+		UpdateOverlayData(OtherLRI, C.Pawn);
+	}
+	CheckTeamCaptains();
+}
+
+function UpdateOverlayData(zLinkedReplicationInfo Linked, Pawn P){
+//	Linked.MyWeapon = C.Pawn.Weapon.GetHumanReadableName();
+	if(P.Weapon != None) Linked.MyWeapon = P.Weapon.InventoryGroup;
+	Linked.MyLocation = P.Location;
+	Linked.MyHealth = P.Health;
+	Linked.MyShield = P.ShieldStrength;
+	if(xPawn(P) != None) Linked.MySmallShield = xPawn(P).SmallShieldStrength;
+}
+
+// suggestion: если пусто то ставить капитаном, есди он не хочет то пусть сбрасывает полномочия
+event SetTeamCaptain(int TeamNum){
+	local zLinkedReplicationInfo MyLRI;
+	local int i;
+	local PlayerReplicationInfo PRI;
+	if(TeamCaptains[TeamNum] != None){
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(TeamCaptains[TeamNum]);
+		TeamCaptains[TeamNum] = None;
+		MyLRI.bTeamCaptain = False;
+	}
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		PRI = Level.GRI.PRIArray[i];
+		if(PRI.Team == None || PRI.bBot || PRI.Team.TeamIndex != TeamNum) continue;
+		TeamCaptains[TeamNum] = PRI;
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(PRI);
+		MyLRI.bTeamCaptain = True;
+		PlayerController(PRI.Owner).ReceiveLocalizedMessage(class'TeamCaptainMessage', TeamNum);
+		break;
+	}
+}
+
+function GetLocationMarks(){
+	local LocationMarks LM;
+	local byte i;
+	LM = new class'LocationMarks';
+	LM.Initialize(Level.Game);
+	
+	/*BeaconsCount = BO.BeaconItemNames.Length;
+	if(BeaconsCount > MAXPOINTS) BeaconsCount = MAXPOINTS;
+	for(i = 0; i < BeaconsCount; i++){
+		BeaconsItemName[i] = BO.BeaconItemNames[i];
+		BeaconsCoordinate[i] = BO.BeaconCoordinates[i];
+	}*/
+	// 
+	BeaconItemNames = BO.BeaconItemNames;
+	BeaconCoordinates = BO.BeaconCoordinates;
+	Debug("GetBeacons.Length = " $ BO.BeaconCoordinates.Length);
+}
+
+defaultproperties{}

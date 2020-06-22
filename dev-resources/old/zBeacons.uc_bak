@@ -1,0 +1,181 @@
+class zBeacons extends ReplicationInfo; // extends Info
+/*
+// todo: beacons InventorySpot
+// beacons:
+// если лифт то определить ближайшее оружие к  нему 'Linkgun lift'
+//check repeats beacons // вынести в отдельный RI класс
+// одинаковые пикапы: определять другой ближайший и дописать в конец
+// тип локации: 1 - near pickup
+//				2 - between p1 & p2
+лифты
+1. около LiftCenter есть всегда LiftExit
+todo: мутатор MutNoSuperWeapon заменяет супер оружие
+
+else if ( xWeaponBase(Other).WeaponType == class'Redeemer' )
+			xWeaponBase(Other).WeaponType = class'RocketLauncher';
+
+todo: добавить ближайший пикап 2 и если разница между ними 10 м и он в прямой видимости то используем его
+
+
+idea: deault & modified beacons
+
+*/
+const COUNT = 30;
+var() vector Coordinate[COUNT];
+var() string ItemName[COUNT];
+var() byte BeaconsCount;
+struct MyBeacon{ var vector Coordinate; var string ItemName; };
+var array<MyBeacon> MyBeacons;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) Coordinate, ItemName, MyBeacons;
+}
+
+auto state StartUp{
+	Begin:
+	ProcessPickups();
+	ProcessNavigationPoints();
+	ProcessBeaconsPlus(); // Check repeats
+//	PostProcessBeaconsPlus(); // Check repeats #2
+//	End();
+	Check();
+}
+function End(){
+	local byte i;
+	BeaconsCount = MyBeacons.Length;
+	for(i = 0; i < BeaconsCount; i++){
+//		Coordinate[i] = 
+//		ItemName[i] = 
+	}
+}
+
+function MyBeacon GetNewBeaconName(MyBeacon Old){
+	local MyBeacon NewBeacon;
+	local string S;
+	S = NearestBeacon(Old.Coordinate);
+	if(S == ""){
+		Old.ItemName @= "#";
+		return Old;
+	}
+	NewBeacon.ItemName = Old.ItemName @ S; // название другое
+	NewBeacon.Coordinate = Old.Coordinate; // вектор тот же
+	return NewBeacon;
+}
+
+function PostProcessBeaconsPlus(){
+	local int Code, i, k;
+	local array<byte> IdArray;
+	local array<string> ItemArray;
+	local array<MyBeacon> NewBeacons;
+	for(i = 0; i < MyBeacons.Length; i++){
+		for(k = 0; k < MyBeacons.Length; k++){
+			if(MyBeacons[i].ItemName == MyBeacons[k].ItemName && k != i){
+				IdArray[IdArray.Length] = i;
+				ItemArray[ItemArray.Length] = MyBeacons[i].ItemName;
+			}
+		}
+	}
+	for(i = 0; i < ItemArray.Length; i++){
+		Code = Asc("A");
+		for(k = 0; k < MyBeacons.Length; k++){
+			if(MyBeacons[k].ItemName == ItemArray[i])
+				MyBeacons[IdArray[i]].ItemName = ItemArray[i] @ Chr(Code++);
+		}
+	}
+}
+
+function ProcessBeaconsPlus(){
+	local array<MyBeacon> NewBeacons;
+	local byte i, k, N;
+	local string S;
+	for(i = 0; i < MyBeacons.Length; i++){
+		N = 1;
+		for(k = i + 1; k < MyBeacons.Length; k++){
+			if(MyBeacons[i].ItemName != MyBeacons[k].ItemName) continue;
+			MyBeacons[i].ItemName @= "#";
+			MyBeacons[k].ItemName @= "#";
+		}
+	}
+}
+
+//function ProcessBeaconsPlus(){
+//	local array<MyBeacon> NewBeacons;
+//	local byte i, k;
+//	for(i = 0; i < MyBeacons.Length; i++){
+//		for(k = 0; k < MyBeacons.Length; k++){
+//			if(MyBeacons[i].ItemName == MyBeacons[k].ItemName && k != i){
+//				NewBeacons[i] = GetNewBeaconName(MyBeacons[i]);
+//			}else NewBeacons[i] = MyBeacons[i];
+//		}
+//	}
+//	MyBeacons = NewBeacons;
+//}
+
+function string NearestBeacon(vector V){
+	local float MinDistance, Distance;
+	local byte i;
+	local string S;
+	MinDistance = 52.5 * 15; // + 5-10 m для lineofsight pickupa
+	for(i = 0; i < MyBeacons.Length; i++){
+		Distance = VSize(V - MyBeacons[i].Coordinate);
+		if(Distance > MinDistance) continue;
+		if(V == MyBeacons[i].Coordinate) continue;
+		MinDistance = Distance;
+		S = MyBeacons[i].ItemName;
+	}
+	if(S != "") S = Repl("(%P)", "%P", S);
+	return S;
+}
+
+function ProcessNavigationPoints(){
+	local NavigationPoint N;
+	local string S;
+	for(N = Level.NavigationPointList; N != None; N = N.NextNavigationPoint){
+		if(N.IsA('Teleporter')) S = "Teleport";
+		else if(N.IsA('Door')) S = "Door";
+		else if(N.IsA('LiftCenter')) S = "Lift";
+		else if(N.IsA('JumpPad')) S = "Jump Pad";
+		else S = "";
+		if(S != "") SetBeacon(N.Location, S);
+	}
+}
+
+function ProcessPickups(){
+	local Pickup P;
+	local string S;
+	foreach DynamicActors(class'Pickup', P){
+		if(P.IsA('WeaponPickup')) S = P.GetHumanReadableName();
+		else if(P.IsA('UDamagePack')) S = "DOUBLE DAMAGE";
+		else if(P.IsA('ShieldPickup')) S = ShieldPickup(P).ShieldAmount @ "Shield";
+		else if(P.IsA('SuperHealthPack')) S = "Mega Health";
+		else continue;
+		SetBeacon(P.Location, S);
+	}
+}
+
+function SetBeacon(vector Coordinate, string S){
+	local MyBeacon MyBeacon;
+	MyBeacon.Coordinate = Coordinate;
+	MyBeacon.ItemName = S;
+	MyBeacons[MyBeacons.Length] = MyBeacon;
+}
+
+function Check(){
+	local int i;
+	for(i = 0; i < MyBeacons.Length; i++){
+		Debug(i @ MyBeacons[i].ItemName @ MyBeacons[i].Coordinate);
+	}
+//	foreach AllActors(class'InventorySpot', InventorySpot){
+//		Debug("InventorySpot" @ InventorySpot.markedItem.GetHumanReadableName());
+//	}
+	
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	RemoteRole=ROLE_SimulatedProxy
+	bAlwaysRelevant=True
+}

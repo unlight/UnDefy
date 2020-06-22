@@ -1,0 +1,50 @@
+class Box extends xDomLetter;
+
+#EXEC TEXTURE IMPORT NAME=Musor256 FILE=Textures\musor256.PCX
+#EXEC TEXTURE IMPORT NAME=Musor FILE=Textures\musor2.PCX
+
+#EXEC NEW STATICMESH FILE=Models\cube256.ase NAME=cube256
+
+//#EXEC STATICMESH IMPORT NAME=Cube256 FILE=Models\cube256.lwo COLLISION=0
+//#EXEC STATICMESH IMPORT NAME=Pyr FILE=Models\pyr.lwo COLLISION=0
+//#EXEC NEW STATICMESH FILE=Models\Box.ase NAME=Box
+//#EXEC OBJ LOAD FILE=TeamSymbols_UT2003.utx
+//#EXEC OBJ LOAD FILE=u64.usx
+// happydead
+// 
+
+//function PostBeginPlay(){
+//	local Material M;
+//	Super.PostBeginPlay();
+//	M = Material(DynamicLoadObject("TeamSymbols_UT2003.DrunkenMasters", class'Texture'));
+//	if(M == None) Log("TeamSymbols_UT2003 failed!");
+//	Skins[0] = M;
+//}
+//#EXEC STATICMESH IMPORT NAME=cube FILE=Models\cube256.3DS COLLISION=0
+// #exec OBJ LOAD FILE=Unreal64.usx
+//#EXEC STATICMESH IMPORT NAME=Cone FILE=Models\cone.lwo COLLISION=0
+//#EXEC STATICMESH IMPORT NAME=Sphere FILE=Models\sphere.lwo COLLISION=0
+//#EXEC STATICMESH IMPORT NAME=Cube FILE=Models\cube.lwo COLLISION=0
+
+//#EXEC NEW STATICMESH FILE="Models\3AnglePyramid.ase" NAME="3AnglePyramid"
+//#EXEC NEW STATICMESH FILE=Models\Box.ase NAME=Box
+//#EXEC NEW STATICMESH FILE="Models\Cone.ase" NAME="Cone"
+//#EXEC NEW STATICMESH FILE="Models\Cylinder.ase" NAME="Cylinder"
+//#EXEC NEW STATICMESH FILE="Models\Pyramid.ase" NAME="Pyramid"
+//#EXEC NEW STATICMESH FILE="Models\Sphere.ase" NAME="Sphere"
+//#EXEC NEW STATICMESH FILE="Models\Torus.ase" NAME="Torus"
+
+defaultproperties{   
+//	StaticMesh=XGame_rc.DomAMesh
+	StaticMesh=StaticMesh'Cube256'
+	Skins(0)=texture'Musor256'
+	DrawType=DT_StaticMesh
+	DrawScale=1.0
+	bCollideWorld=false
+	bCollideActors=false
+	bStatic=false
+	Physics=PHYS_Rotating
+	bStasis=false
+	bFixedRotationDir=True
+	RotationRate=(Yaw=24000)
+}

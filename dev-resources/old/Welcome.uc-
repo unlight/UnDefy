@@ -1,0 +1,39 @@
+class Welcome extends Interaction;
+
+var int Ticks;
+var DrawOpText Draw;
+var PlayerController Me;
+var config float X, Y;
+var config int I;
+
+var config byte Justification, RenderStyle, VertAlign;
+var config string FontName; 
+
+event Initialized(){
+	Me = ViewportOwner.Actor;
+	Draw = new class'DrawOpText';
+//	Draw.Text = "Welcome to UMP 2004 v4! Type 'help' in console to show available commands.|";
+	Draw.Text = "Web: unreal64.ru / unreal64.planetunreal.gamespy.com IRC: irc.dalnet.ru #unreal64";
+	Draw.DrawColor = class'HUD'.default.GoldColor;
+//	Draw.DrawColor.A = 255;
+	Draw.bWrapText = False;
+	Draw.Justification = Justification;
+	Draw.VertAlign = VertAlign;
+	Draw.RenderStyle = RenderStyle;
+	Draw.FontName = FontName;
+}
+
+function PostRender(Canvas C){
+	local string S, S1;
+	S = "Welcome to UMP 2004 v4! Type 'help' in console to show available commands";
+	C.DrawColor = class'HUD'.default.GoldColor;
+	C.DrawColor.A = byte(Ticks-- / 2);
+	if(Ticks < 0) class'zInteraction'.static.UnloadInteraction(Me, 'Welcome');
+	C.DrawScreenText(S, 0.2, 0.2, EDrawPivot(0));
+}
+
+defaultproperties{
+	bActive=False
+	bVisible=True
+	Ticks=500
+}

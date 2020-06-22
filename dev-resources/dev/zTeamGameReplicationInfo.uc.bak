@@ -1,0 +1,174 @@
+class zTeamGameReplicationInfo extends zGameReplicationInfo;
+// сюда пойдет все то что общее для всех игроков
+// здесь можно замутить апдейтер или голосование
+//var PlayerReplicationInfo TeamCaptains[2]; // // deprecated var
+//var float NextUpdateTime; // Team Captains - // deprecated var
+//var byte TeamTimeoutsCount[2]; // deprecated
+//var byte TeamLocked[2];
+// Location Marks
+var string LocNamesB[30];
+var vector LocCoordsB[30];
+var byte LocCount;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) LocNamesB, LocCoordsB, LocCount;
+}
+
+auto state StartUp{
+	event Tick(float DeltaTime){
+		GetLocationMarks();
+		GotoState('');
+		Disable('Tick');
+	}
+}
+
+function PostBeginPlay(){
+	Super.PostBeginPlay();
+	SetTimer(1.0, True); // может тик?!
+}
+
+simulated function vector GetLocCoord(byte i){
+	return LocCoordsB[i];
+}
+
+// if ( PC != None && PC.bIsPlayer && PC.PlayerReplicationInfo != None &&
+//!PC.PlayerReplicationInfo.bOnlySpectator && !PC.PlayerReplicationInfo.bBot && PC.Player != None ) 
+
+//function LockTeam(zLinkedReplicationInfo LRI, string MutateString){
+//	local byte Lock;
+//	local string LockStatus;
+//	local int TeamNum;
+//	if(!LRI.bTeamCaptain || LRI.PlayerInfo.Team == None) return;
+//	Lock = byte(Repl(MutateString, "tmlock", ""));
+//	TeamNum = LRI.GetTeamNum();
+//	if(TeamLocked[TeamNum] == Lock) return;
+//	TeamLocked[TeamNum] = Lock;
+//	LockStatus = Eval(IsTeamLocked(TeamNum), "LOCKED", "UNLOCKED");
+//	LRI.Me.ClientMessage("Team" @ LockStatus);
+//	
+//	if(IsTeamLocked(0) || IsTeamLocked(1)) Level.Game.bMustJoinBeforeStart = True;
+//}
+//
+//function bool IsTeamLocked(int i){
+//	return (TeamLocked[i] != 0);
+//}
+
+function Resign(zLinkedReplicationInfo LRI, string MutateString){
+	local int PlayerID, i, TeamNum;
+	local PlayerReplicationInfo CPRI, PRI;
+	MutateString -= "resign";
+	if(!LRI.IsCaptain()) return;
+	
+	TeamNum = LRI.Me.GetTeamNum();
+	LRI.bTeamCaptain = False;
+	TeamCaptains[TeamNum] = None;
+	
+	PlayerID = int(MutateString);
+	CPRI = Level.GRI.FindPlayerByID(PlayerID);
+	
+	if(CPRI != None && CPRI.Team != None && CPRI != LRI.PlayerInfo && CPRI.Team == LRI.PlayerInfo.Team){
+		SetTeamCaptain(CPRI.Team.TeamIndex, CPRI);
+		return;
+	}
+
+	// скидываем полномочия комуто другому
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		PRI = Level.GRI.PRIArray[i];
+		if(PRI.Team == None || PRI.bBot || PRI == LRI.PlayerInfo) continue;
+		TeamCaptains[TeamNum] = PRI;
+		class'zLinkedReplicationInfo'.static.Get(PRI).bTeamCaptain = True;
+		class'zLinkedReplicationInfo'.static.Get(PRI).ReceiveMessage(class'TeamCaptainMessage', TeamNum);
+		break;
+	}
+}
+
+function InvitePlayer(zLinkedReplicationInfo LRI, string MutateString){
+	local int PlayerID, KickID, N;
+	local PlayerReplicationInfo Invited, Kicked;
+	local array<string> Parts;
+	
+	Split(Mid(MutateString, 6), " ", Parts);
+	PlayerID = int(Parts[0]);
+	KickID = int(Parts[1]);
+	Invited = Level.GRI.FindPlayerByID(PlayerID);
+	if(KickID > 0) Kicked = Level.GRI.FindPlayerByID(KickID);
+	if(Invited == None || Kicked == None) return;
+	
+	if(!LRI.bTeamCaptain) N = 38;
+	else if(LRI.Me.IsSpectating()) N = 13;
+	else if(Kicked.bOnlySpectator) N = 41;
+	else if(Invited.Team == LRI.Me.PlayerReplicationInfo.Team) N = 39;
+	else if(Level.GRI.bMatchHasBegun && !zMain(Owner).IsWarmup()) N = 32;
+		
+	if(N != 0){ LRI.Me.ReceiveLocalizedMessage(class'UnallowedMessage', N); return; }
+
+	if(Invited.bOnlySpectator){ // Invited в спеках
+		Level.Game.MaxSpectators++;
+		PlayerController(Kicked.Owner).BecomeSpectator();
+		Level.Game.MaxSpectators--;
+		PlayerController(Invited.Owner).BecomeActivePlayer();
+		if(Invited.Team != LRI.Me.PlayerReplicationInfo.Team) PlayerController(Invited.Owner).ServerChangeTeam( LRI.GetTeamNum() );
+	}else{ // Invited в другой команде, Kicked в моей
+		PlayerController(Invited.Owner).SwitchTeam();
+		PlayerController(Kicked.Owner).SwitchTeam();
+	}
+}
+
+function GetLocationMarks(){
+	local LocationMarks LM;
+	local int i;
+	LM = new class'LocationMarks';
+	LM.Initialize(Level.Game);
+	if(LM.LocNames.Length > ArrayCount(LocNamesB)) LM.LocNames.Length = ArrayCount(LocNamesB);
+	LocCount = LM.LocNames.Length;
+	for(i = 0; i < LM.LocNames.Length; i++){
+		LocNamesB[i] = LM.LocNames[i];
+		LocCoordsB[i] = LM.Coordinates[i];
+	}
+}
+
+function CheckTeamCaptains(){
+	local int i;
+	NextUpdateTime = Level.TimeSeconds + 1 + FRand();
+	for(i = 0; i < 2; i++) if(TeamCaptains[i] == None || TeamCaptains[i].Team == None || TeamCaptains[i].Team.TeamIndex != i) SetTeamCaptain(i);
+}
+
+event Timer(){
+	local Controller C;
+	// maybe move in zLinkedReplicationInfo
+	for(C = Level.ControllerList; C != None; C = C.NextController){
+		if(C.Pawn != None) GameRules.GetLRI(C.PlayerReplicationInfo).UpdateTeamInfo(C.Pawn);
+	}
+	if(Level.TimeSeconds > NextUpdateTime) CheckTeamCaptains();
+	TimerRate = (4 + Rand(4)) / 10.0; // 0.4 - 0.8
+}
+
+// suggestion: если пусто то ставить капитаном, есди он не хочет то пусть сбрасывает полномочия
+event SetTeamCaptain(int TeamNum, optional PlayerReplicationInfo CPRI){
+	local zLinkedReplicationInfo MyLRI;
+	local int i;
+	local PlayerReplicationInfo PRI;
+	
+	if(CPRI != None && CPRI.Owner != None && !CPRI.bBot){
+		TeamCaptains[TeamNum] = CPRI;
+		PlayerController(CPRI.Owner).ReceiveLocalizedMessage(class'TeamCaptainMessage', TeamNum);
+		return;
+	}
+	
+	if(TeamCaptains[TeamNum] != None){
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(TeamCaptains[TeamNum]);
+		TeamCaptains[TeamNum] = None;
+		MyLRI.bTeamCaptain = False;
+	}
+	for(i = 0; i < Level.GRI.PRIArray.Length; i++){
+		PRI = Level.GRI.PRIArray[i];
+		if(PRI.Team == None || PRI.bBot || PRI.Team.TeamIndex != TeamNum) continue;
+		TeamCaptains[TeamNum] = PRI;
+		MyLRI = class'zLinkedReplicationInfo'.static.Get(PRI);
+		MyLRI.bTeamCaptain = True;
+		PlayerController(PRI.Owner).ReceiveLocalizedMessage(class'TeamCaptainMessage', TeamNum);
+		break;
+	}
+}
+
+defaultproperties{}

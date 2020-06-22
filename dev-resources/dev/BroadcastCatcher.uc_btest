@@ -1,0 +1,42 @@
+class BroadcastCatcher extends BroadcastHandler;
+
+function bool AcceptBroadcastLocalized(PlayerController P, Actor Sender, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	local bool bGameMessage, bTeamGame;
+	bGameMessage = (Message == Level.Game.GameMessageClass);
+	bTeamGame = (bGameMessage && TeamGame(Sender) != None);
+/*	if(P != None && bGameMessage && P.PlayerReplicationInfo == R1){ // BecomeSpectator
+		if(N == 14) Debug("BecomeSpectator" @ P.GetHumanReadableName());
+		else if(N == 1) Debug("BecomeActivePlayer" @ P.GetHumanReadableName());
+	}else if(bTeamGame && N == 3){ // R1 != None && UnrealTeamInfo(O) != None
+		Debug("ChangeTeam" @ R1.GetHumanReadableName() @ UnrealTeamInfo(O).GetHumanReadableName());
+	}else if(bTeamGame && N == 4){ // R1 != None
+		Debug("Left Game" @ R1.GetHumanReadableName());
+	}*/
+	class'zUtil'.static.ConsoleMessage(P, N @ Message @ "bGameMessage" @ bGameMessage @ "bTeamGame" @ bTeamGame @ "BSpec" @ R1.bOnlySpectator, True);
+	//Debug(N @ Message @ "bGameMessage" @ bGameMessage @ "bTeamGame" @ bTeamGame @ "BSpec" @ R1.bOnlySpectator);
+	return Super.AcceptBroadcastLocalized(P, Sender, Message, N, R1, R2, O);
+}
+
+//event BroadcastLocalized(Actor Sender, PlayerController P, class<LocalMessage> Message, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+////	local PlayerController P;
+//	local bool bGameMessage, bTeamGame;
+////	P = PlayerController(Sender);
+//	bGameMessage = (Message == Level.Game.GameMessageClass);
+//	//Debug("AllowBroadcastLocalized" @ Sender.GetHumanReadableName() @ Message @ N @ R1.GetHumanReadableName() @ R2 @ O);
+//	bTeamGame = (bGameMessage && TeamGame(Sender) != None);
+//	if(P != None && bGameMessage && P.PlayerReplicationInfo == R1){ // BecomeSpectator
+//		if(N == 14) Debug("BecomeSpectator" @ P.GetHumanReadableName());
+//		else if(N == 1) Debug("BecomeActivePlayer" @ P.GetHumanReadableName());
+//	}else if(bTeamGame && N == 3 && R1 != None && UnrealTeamInfo(O) != None){
+//		Debug("ChangeTeam" @ R1.GetHumanReadableName() @ UnrealTeamInfo(O).GetHumanReadableName());
+//	}else if(bTeamGame && N == 4 && R1 != None){
+//		Debug("Left Game" @ R1.GetHumanReadableName());
+//	}
+//	Super.BroadcastLocalized(Sender, P, Message, N, R1, R2, O);
+//}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{}

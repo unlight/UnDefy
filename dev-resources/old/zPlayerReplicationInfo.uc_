@@ -1,0 +1,8 @@
+class zPlayerReplicationInfo extends xPlayerReplicationInfo;
+
+simulated function string GetLocationName(){
+	Super.GetLocationName();
+}
+
+defaultproperties{
+}

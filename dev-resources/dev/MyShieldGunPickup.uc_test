@@ -1,0 +1,5 @@
+class MyShieldGunPickup extends ShieldGunPickup;
+
+defaultproperties{
+	InventoryType=class'MyShieldGun'
+}

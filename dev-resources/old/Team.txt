@@ -1,0 +1,10 @@
+//function array<PlayerReplicationInfo> GetTeamPlayerReplicationInfo(){
+//	
+//	local Controller C;
+//	local array<PlayerReplicationInfo> A;
+//	
+//	for(C = Level.ControllerList; C != None; C = C.NextController){
+//		if(C.GetTeamNum() == TeamIndex) A[A.Length] = C.PlayerReplicationInfo;
+//	}
+//	return A;
+//}

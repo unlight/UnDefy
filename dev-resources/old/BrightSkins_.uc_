@@ -1,0 +1,68 @@
+class BrightSkins_ extends Interaction;
+
+var(Settings) byte TeamColor;
+var(Settings) string TeamModel;
+var(Settings) string EnemyModel;
+
+var Mesh MyPlayerMesh[2];
+var Material MyBodySkin[2], MyHeadSkin[2];
+var string VoiceType[2];
+
+function Load(byte i, string ModelName){
+	local xUtil.PlayerRecord PlayerRec;
+	local string TeamSuffix, BodySkinName, HeadSkinName;
+	PlayerRec = class'xUtil'.static.FindPlayerRecord(ModelName);
+	MyPlayerMesh[i] = Mesh(DynamicLoadObject(PlayerRec.MeshName, class'Mesh'));
+	TeamSuffix = "_1";
+	BodySkinName = "Bright" $ PlayerRec.BodySkinName $ TeamSuffix $ "B";
+	HeadSkinName = PlayerRec.FaceSkinName;
+	if(PlayerRec.TeamFace) HeadSkinName $= TeamSuffix;
+	MyBodySkin[i] = Material(DynamicLoadObject(BodySkinName, class'Material'));
+	MyHeadSkin[i] = Material(DynamicLoadObject(HeadSkinName, class'Material'));
+	VoiceType[i] = PlayerRec.VoiceClassName;
+}
+
+event Initialize(){
+	Load(0, EnemyModel);
+	Load(1, TeamModel);
+}
+
+function UpdatePawn(Pawn P, byte i){
+	P.LinkMesh(MyPlayerMesh[i]);
+	P.Skins[0] = MyBodySkin[i];
+	P.Skins[1] = MyHeadSkin[i];
+	P.AmbientGlow = 200;
+	P.SetBoneScale(0, 2, 'lfoot');
+	P.SetBoneScale(1, 2, 'rfoot');
+//	P.SetBoneScale(2, 2, 'head');
+//	P.SetBoneScale(3, 3, 'spine');
+//	P.PlayerReplicationInfo.SetCharacterVoice(VoiceType[i]);
+//	P.bUnlit = False;
+}
+function Tick(float DeltaTime){
+	local Pawn P;
+	foreach ViewportOwner.Actor.DynamicActors(class'Pawn', P){
+		if(P.AmbientGlow == 200 || P.PlayerReplicationInfo == None || P == ViewportOwner.Actor.Pawn) continue;
+		Debug("UpdatePawn:" @ P);
+		UpdatePawn(P, 0);
+	}
+}
+
+simulated function Debug(coerce string S){
+	local string String, S2;
+	local PlayerController PlayerController;
+	if(ViewportOwner.Actor.Level.Game != None) S2 = "(Server)";
+	else S2 = "(Client)";
+	String = string(ViewportOwner.Actor.Level.TimeSeconds) @ "BrightSkins:" @ S @ S2;
+	PlayerController = ViewportOwner.Actor.Level.GetLocalPlayerController();
+	if(PlayerController == None) ViewportOwner.Actor.Level.Game.Broadcast(PlayerController, String);
+	else PlayerController.ClientMessage(String);
+	Log(String);
+}
+
+defaultproperties{
+	bRequiresTick=True
+	TeamColor=1
+	TeamModel="Reinha"
+	EnemyModel="Gorge"
+}

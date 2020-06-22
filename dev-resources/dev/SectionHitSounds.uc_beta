@@ -1,0 +1,70 @@
+class SectionHitSounds extends zComponentGroup;
+
+function OnChangeEvent(GUIComponent C){
+	if(!IsInitialized()) return;
+	//Debug("OnChangeEvent" @ C);
+	switch(C.Tag){
+		case 1: class'zMain'.default.FeedbackVolume = moSlider(C).GetValue(); break;
+		case 3: class'zMain'.default.iSimpleHitType = moComboBox(C).GetIndex(); break;
+		case 2: TurnMyControls( moComboBox(C).GetIndex() ); break;
+		case 4: class'zMain'.default.FeedbackLine = moSlider(C).GetValue();
+	}
+	class'zMain'.static.StaticSaveConfig();
+}
+
+function TurnMyControls(int Index){
+	switch(Index){ // 0-Disabled 1-Simple 2-CPMA 3-Attenuation
+		// contols: 1- FeedbackVolume 2- FeedbackType 3- iSimpleHitType 4- FeedbackLine
+		case 0: TurnControls("!1 2 !3 !4"); break; // disabled
+		case 1: TurnControls("1 2 3 !4"); break; // simple
+		case 2: TurnControls("1 2 !3 !4"); break; // CPMA
+		case 3: TurnControls("!1 2 3 4"); break; // Attenuation
+	}
+}
+
+function OnLoadINI(GUIComponent C, string S){
+	TurnMyControls( moComboBox(Controls[2]).GetIndex() );
+	moSlider(Controls[1]).SetComponentValue(class'zMain'.default.FeedbackVolume);
+	moComboBox(Controls[2]).SetIndex(class'zMain'.default.FeedbackType);
+	// simple hit sound: 0 - hit1, 1 - like lowest CPMA, 2 - like normal CPMA
+	moComboBox(Controls[3]).SetIndex(class'zMain'.default.iSimpleHitType);
+	moSlider(Controls[4]).SetComponentValue(class'zMain'.default.FeedbackLine);
+}
+
+function InitComponent(GUIController InController, GUIComponent InOwner){
+	local moComboBox ComboBox;
+	local moSlider Slider;
+	Super.InitComponent(InController, InOwner);
+	/*********** 1 ***********/ // FeedbackVolume
+	Slider = moSlider( CreateComponent(class'moSlider') );
+	Slider.SetCaption("Volume");
+	Slider.Setup(0, 2);
+	AppendComponent(Slider, True);
+	/*********** 2 ***********/ // FeedbackType // 1 = simple
+	ComboBox = moComboBox( CreateComponent(class'moComboBox') );
+	ComboBox.SetCaption("Hitsounds");
+	ComboBox.ReadOnly(True);
+	ComboBox.AddItem("Disabled");
+	ComboBox.AddItem("Simple");
+	ComboBox.AddItem("CPMA");
+	ComboBox.AddItem("Attenuation");
+	AppendComponent(ComboBox, True);
+	/*********** 3 ***********/ // iSimpleHitType
+	ComboBox = moComboBox( CreateComponent(class'moComboBox') );
+	ComboBox.SetCaption("Sound");
+	ComboBox.ReadOnly(True);
+	ComboBox.AddItem("Hit #0");
+	ComboBox.AddItem("CPMA #1");
+	ComboBox.AddItem("CPMA #2");
+	AppendComponent(ComboBox, True);
+	/*********** 4 ***********/ // FeedbackLine
+	Slider = moSlider( CreateComponent(class'moSlider') );
+	Slider.SetCaption("Damage");
+	Slider.SetHint("");
+	Slider.Setup(0, 60, True);
+	AppendComponent(Slider, True);
+}
+
+defaultProperties{
+	Caption="Hit Sounds"
+}

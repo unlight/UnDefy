@@ -1,0 +1,4 @@
+ClientReceiveLoginMenu
+DeathMatch.LoginMenuClass="GUI2K4.UT2K4PlayerLoginMenu"
+ClientReplaceMenu
+

@@ -1,0 +1,71 @@
+class zComponentGroup extends ComponentGroup abstract;
+
+function OnChangeEvent(GUIComponent C);
+//class'zMain'.static.StaticSaveConfig();
+
+function bool IsInitialized(){
+	return MyMiddleGamePanel(MenuOwner).bInitialized;
+}
+
+event TurnControls(string MyControlList){
+	local array<string> Parts;
+	local int i, Index;
+	local bool B;
+	Split(MyControlList, " ", Parts);
+	for(i = 0; i < Parts.Length; i++){
+		B = True;
+		if(Left(Parts[i], 1) == "!"){
+			Parts[i] = Mid(Parts[i], 1);
+			B = False;
+		}
+		Index = int(Parts[i]);
+		if(Index == 0) continue;
+		if(B) Controls[Index].EnableMe();
+		else Controls[Index].DisableMe();
+	}
+}
+
+function InitComponent(GUIController InController, GUIComponent InOwner){
+	Super.InitComponent(InController, InOwner);
+	i_Background.FontScale = Self.FontScale;
+	i_Background.TopPadding = 0.05;
+	i_Background.BottomPadding = -0.05;
+	i_Background.LeftPadding /= 1.5;
+	i_Background.RightPadding /= 1.5;
+	i_Background.FillOwner();
+}
+
+function PostInitComponent(){
+	local int i;
+	for(i = 1; i < Controls.Length; i++) Controls[i].Tag = i;
+	bBoundToParent = True;
+	bScaleToParent = True;
+}
+
+function GUIComponent CreateComponent(class<GUIMenuOption> ClassName){
+	local GUIMenuOption MO;
+	local int i;
+	MO = new ClassName;
+	MO.bBoundToParent = True;
+	MO.bScaleToParent = True;
+	MO.OnChange = OnChangeEvent;
+	MO.FontScale = Self.FontScale;
+	MO.InitComponent(Controller, Self);
+	MO.MyLabel.FontScale = Self.FontScale;
+	for(i = 0; MO.MyComponent != None && i < GUIMultiComponent(MO.MyComponent).Controls.Length; i++){
+		GUIMultiComponent(MO.MyComponent).Controls[i].FontScale = Self.FontScale;
+	}
+	return MO;
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultProperties{
+	IniOption="@Internal"
+	FontScale=FNS_Small
+	Begin Object Class=AltSectionBackground Name=CGBackground
+	End Object
+	i_Background=CGBackground
+}

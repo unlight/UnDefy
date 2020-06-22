@@ -1,0 +1,42 @@
+/*
+     HeadRadius=+9.0
+     HeadHeight=6.0
+     CollisionRadius=+34
+     CollisionHeight=+78
+ */
+
+function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
+
+.....
+    
+    C = GetBoneCoords(HeadBone);
+
+    HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis);
+
+    // Express snipe trace line in terms of B + tM
+    B = loc;
+    M = ray * (2.0 * CollisionHeight + 2.0 * CollisionRadius);
+
+    // Find Point-Line Squared Distance
+    diff = HeadLoc - B;
+    t = M Dot diff;
+    if (t > 0)
+    {
+        DotMM = M dot M;
+        if (t < DotMM)
+        {
+            t = t / DotMM;
+            diff = diff - (t * M);
+        }
+        else
+        {
+            t = 1;
+            diff -= M;
+        }
+    }
+    else
+        t = 0;
+
+    Distance = Sqrt(diff Dot diff);
+
+    return (Distance < (HeadRadius * HeadScale * AdditionalScale));

@@ -1,0 +1,20 @@
+class DebugPlayerRec extends Object;
+
+static function Debug(xUtil.PlayerRecord PR, string N){
+	Log("=======" @ N @ "=========");
+	Log("DefaultName" @ PR.DefaultName);
+	Log("Species" @ PR.Species);
+	Log("MeshName" @ PR.MeshName);
+	Log("BodySkinName" @ PR.BodySkinName);
+	Log("FaceSkinName" @ PR.FaceSkinName);
+	Log("TextName" @ PR.TextName);
+	Log("Sex" @ PR.Sex);
+	Log("VoiceClassName" @ PR.VoiceClassName);
+	Log("Skeleton" @ PR.Skeleton);
+	Log("RecordIndex" @ PR.RecordIndex);
+	Log("Ragdoll" @ PR.Ragdoll);
+	Log("FaceSkinName" @ PR.FaceSkinName);
+	Log("FaceSkinName" @ PR.FaceSkinName);
+	Log("======= END " @ N @ "=========");
+}
+defaultproperties{}

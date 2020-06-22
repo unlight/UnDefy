@@ -1,0 +1,173 @@
+class BrightSkins extends Interaction;
+// todo: teammodel -> teamskin
+
+var byte bForceModel[2];
+var Mesh MyPlayerMesh[2]; // MySkeletonMesh[2];
+var Material MyBodySkin[2], MyHeadSkin[2];
+var byte Glowing[2];
+var class<xPawnGibGroup> MyGibGroupClass[2];
+
+var color EnemyColor;
+var int CombineOp;
+
+function Tick(float DeltaTime){
+	local xPawn P;
+	local PlayerController Me;
+	Me = ViewportOwner.Actor;
+	foreach Me.DynamicActors(class'xPawn', P){
+		if(P.PlayerReplicationInfo == None) P.AmbientGlow = 0;
+		else if(P != Me.ViewTarget) ForceModelUpdate(P, 0);
+	}
+}
+
+exec function SetCombineOp(int I){
+	CombineOp = I;
+}
+
+
+exec function SetEnemyColor(byte R, byte G, byte B, optional byte A){
+	EnemyColor = class'Canvas'.static.MakeColor(R, G, B, A);
+}
+final exec function update(){
+	local PlayerController Me;
+	local xPawn P;
+	Me = ViewportOwner.Actor;
+	foreach Me.DynamicActors(class'xPawn', P){
+		if(P != Me.ViewTarget) ForceModelUpdate(P, 0);
+	}
+}
+
+final exec function TeamModel(string S){
+	class'zMain'.default.TeamModel = S;
+	if(S == "") return;
+	ForceModelLoad(1, S);
+}
+final exec function EnemyModel(string S){
+	class'zMain'.default.EnemyModel = S;
+	Debug("EnemyModel" @ S);
+	if(S == "") return;
+	class'DeathMatch'.default.bForceDefaultCharacter = True;
+	class'DMMutator'.default.bBrightSkins = True;
+	ForceModelLoad(0, S);
+}
+final function ForceModelLoad(byte i, string ModelName){ // "Gorge/blue/200"
+	local xUtil.PlayerRecord PlayerRec;
+	local string TeamSuffix, BodySkinName, HeadSkinName;
+	local bool bBrightSkin;
+	local array<string> ModelArray;
+	Split(ModelName, "/", ModelArray);
+	// Model
+	PlayerRec = class'xUtil'.static.FindPlayerRecord(ModelArray[0]);
+	MyPlayerMesh[i] = Mesh(DynamicLoadObject(PlayerRec.MeshName, class'Mesh'));
+	if(MyPlayerMesh[i] == None){
+		Debug("ForceModelLoad" @ "MyPlayerMesh" @ i @ "FAILED" @ PlayerRec.MeshName);
+		return;
+	}
+	// Color
+	if(ModelArray[1] ~= "blue") TeamSuffix = "_1";
+	else if(ModelArray[1] ~= "red") TeamSuffix = "_0";
+	else TeamSuffix = "";
+	Glowing[i] = byte(ModelArray[2]); // Glow
+	// Get the body skin
+	BodySkinName = PlayerRec.BodySkinName $ TeamSuffix;
+	bBrightSkin = class'DMMutator'.default.bBrightSkins && Left(BodySkinName, 12) ~= "PlayerSkins.";
+	if(bBrightSkin && TeamSuffix != "") BodySkinName = "Bright" $ BodySkinName $ "B";
+	// Get the head skin
+	HeadSkinName = PlayerRec.FaceSkinName;
+	if(PlayerRec.TeamFace) HeadSkinName $= TeamSuffix;
+	MyBodySkin[i] = Material(DynamicLoadObject(BodySkinName, class'Material'));
+	if(MyBodySkin[i] == None){
+		Debug("ForceModelLoad" @ "MyBodySkin" @ i @ "FAILED" @ BodySkinName);
+		return;
+	}
+	MyHeadSkin[i] = Material(DynamicLoadObject(HeadSkinName, class'Material'));
+	if(MyHeadSkin[i] == None){
+		Debug("ForceModelLoad" @ "MyHeadSkin" @ i @ "FAILED" @ HeadSkinName);
+		return;
+	}
+	MyGibGroupClass[i] = class<xPawnGibGroup>(DynamicLoadObject(PlayerRec.Species.default.GibGroup, class'Class'));
+	if(MyGibGroupClass[i] == None){
+		Debug("ForceModelLoad" @ "MyGibGroupClass" @ i @ "FAILED" @ PlayerRec.Species);
+		return;
+	}
+//	MySkeletonMesh[i] = Mesh(DynamicLoadObject(PlayerRec.Skeleton, class'Mesh'));
+//	if(MySkeletonMesh[i] == None) return;
+	bForceModel[i] = 1;
+//	VoiceType[i] = PlayerRec.VoiceClassName;
+}
+
+function ForceModelUpdate(xPawn P, byte i){
+	local ConstantColor myConstantColor;
+	local Combiner myCombiner; 
+	local FinalBlend myFinalBlend;     // material for the mesh skin
+	local ColorModifier CM;
+	local Texture myTexture;
+	local PlayerController Me;
+
+	Me = ViewportOwner.Actor;
+
+	if(P.Skins[0] == MyBodySkin[i]) return; //  || P.AmbientGlow == Glowing[i]
+	Debug("ForceModelUpdate" @ i @ P.GetHumanReadableName());
+	P.LinkMesh(MyPlayerMesh[i]);
+	P.Skins[0] = MyBodySkin[i];
+	P.Skins[1] = MyHeadSkin[i];
+	P.AmbientGlow = Glowing[i];
+	P.ScaleGlow = 100;
+//	P.bUnlit = False;
+//	P.bNoCoronas = False;
+//	P.SetBoneScale(0, 1.3, 'lfoot');
+//	P.SetBoneScale(1, 1.3, 'rfoot');
+//	P.GibGroupClass = MyGibGroupClass[i];
+//	P.AssignInitialPose();
+//	P.SkeletonMesh = MySkeletonMesh[i];
+	return;
+	// create materials for this object
+	myConstantColor = ConstantColor(Me.Level.ObjectPool.AllocateObject(class'ConstantColor'));
+	myCombiner = Combiner(Me.Level.ObjectPool.AllocateObject(class'Combiner'));
+	myFinalBlend = FinalBlend(Me.Level.ObjectPool.AllocateObject(class'FinalBlend'));
+	// set up materials
+	myConstantColor.Color = EnemyColor;
+	myCombiner.Material1 = MyBodySkin[i]; // Skins[0]
+	myCombiner.Material2 = myConstantColor;
+	switch(CombineOp){
+		case 0: myCombiner.CombineOperation = CO_Use_Color_From_Material1; break;
+		case 1: myCombiner.CombineOperation = CO_Use_Color_From_Material2; break;
+		case 2: myCombiner.CombineOperation = CO_Multiply; break;
+		case 3: myCombiner.CombineOperation = CO_Add; break;
+		case 4: myCombiner.CombineOperation = CO_Subtract; break;
+		case 5: myCombiner.CombineOperation = CO_AlphaBlend_With_Mask; break;
+		case 6: myCombiner.CombineOperation = CO_Add_With_Mask_Modulation; break;
+		case 7: myCombiner.CombineOperation = CO_Use_Color_From_Mask; break;
+	}
+	myFinalBlend.Material = myCombiner;
+//	myFinalBlend.LODSet = LODSET_PlayerSkin;
+//	if(Material(myFinalBlend) == None) Debug("Typecast for Material failed!");
+	P.Skins[0] = myFinalBlend; //	Skins[0] = NewBodySkin;
+}
+function bool IsTeamMate(xPawn P){
+	if(ViewportOwner != None && ViewportOwner.Actor != None && ViewportOwner.Actor.PlayerReplicationInfo != None 
+		&& ViewportOwner.Actor.PlayerReplicationInfo.Team != None
+		&& P != None
+		&& P.PlayerReplicationInfo != None 
+		&& P.PlayerReplicationInfo.Team != None)
+			return (ViewportOwner.Actor.GameReplicationInfo.bTeamGame
+	 				&& P.PlayerReplicationInfo.Team == ViewportOwner.Actor.PlayerReplicationInfo.Team);
+}
+
+simulated function Debug(coerce string S){
+	local string String, S2;
+	local PlayerController PlayerController;
+	if(ViewportOwner.Actor.Level.Game != None) S2 = "(Server)";
+	else S2 = "(Client)";
+	String = string(ViewportOwner.Actor.Level.TimeSeconds) @ "BS:" @ S @ S2;
+	PlayerController = ViewportOwner.Actor.Level.GetLocalPlayerController();
+	if(PlayerController == None) ViewportOwner.Actor.Level.Game.Broadcast(PlayerController, String);
+	else PlayerController.ClientMessage(String);
+	Log(String);
+}
+
+defaultproperties{
+	CombineOp=5
+	EnemyColor=(R=1,G=1,B=250,A=255)
+	bRequiresTick=True
+}

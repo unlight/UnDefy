@@ -1,0 +1,14 @@
+class zShockProjFire extends ShockProjFire;
+
+simulated function PostBeginPlay(){
+	Debog("PostBeginPlay");
+	Super.PostBeginPlay();
+}
+
+simulated function Debog(coerce string S){
+	class'zUtil'.static.Debog(S, Self);
+}
+
+defaultproperties{
+    ProjectileClass=class'zShockProjectile'
+}

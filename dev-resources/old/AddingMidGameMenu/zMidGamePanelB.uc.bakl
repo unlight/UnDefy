@@ -1,0 +1,71 @@
+class zMidGamePanelB extends MidGamePanel;
+
+var automated GUIScrollTextBox ScrollTextBox;
+
+//var automated GUITabControl TabControl;
+//var automated GUIHeader Header;
+
+var GUITabControl TabControl;
+var GUIHeader Header;
+
+function InitComponent(GUIController MyController, GUIComponent MyOwner){
+	local string S;
+	Super.InitComponent(MyController, MyOwner);
+	S = "";
+	S $= "This mutator adds new features (which unfortunately doesn't exists in UTComp and TTM), such as timeout, enemy's cam, alternative location names (in team overlay), various team chat tokens, etc.";
+	S $= "||UMP can by used like addon for UTComp or TTM.";
+	S $= "|Recommended for gametypes 1v1 and team deathmatch 2v2.";
+	S $= "||Attention! In standalone mode works with some bugs, use only on dedicated server.";
+	//ScrollTextBox.SetContent(S);
+	
+	TabControl.AddTab("Tab 1", string(class'MyTabPanelA'));
+	TabControl.AddTab("Tab 2", string(class'MyTabPanelB'));
+	
+	TabControl = new class'GUITabControl';
+	AppendComponent(TabControl);
+	
+	Header.SetCaption("Header");
+	Header.DockedTabs = TabControl;
+	
+	Debug("InitComponent" @ MyController @ MyOwner);
+}
+
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, PlayerOwner());
+}
+
+defaultproperties{
+//	 Begin Object Class=GUIScrollTextBox Name=GUIScrollTextBox1
+//		 bNoTeletype=True
+//		 CharDelay=0.000000
+//		 EOLDelay=0.000000
+//		 TextAlign=TXTA_Center
+//		 //OnCreateComponent=Text.InternalOnCreateComponent
+//		 FontScale=FNS_Small
+//		 bAcceptsInput=False
+//		 bNeverFocus=True
+//	 End Object
+//	 Text=GUIScrollTextBox1
+
+	Begin Object Class=GUIHeader Name=GUIHeader1
+	End Object
+	Header=GUIHeader1
+	
+	Begin Object Class=GUITabControl Name=GUITabControl1
+		bFillSpace=True
+		bDockPanels=True
+		TabHeight=0.037500
+		BackgroundStyleName="TabBackground"
+		WinTop=0.059026 // WinTop=0.007028 - no header
+		WinLeft=0.012500
+		WinWidth=0.974999
+		WinHeight=0.044644
+		bBoundToParent=True
+		bScaleToParent=True
+		bAcceptsInput=True
+		bInit=False
+		//OnActivate=GUITabControl.InternalOnActivate
+		//OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object
+    TabControl=GUITabControl1
+}

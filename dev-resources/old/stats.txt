@@ -1,0 +1,11 @@
+	/*if(WeaponPickup(Item) != None){
+		i = class<Weapon>(Item.InventoryType).default.InventoryGroup;
+		Linked.AmmoTaken[i] += WeaponPickup(Item).AmmoAmount[0];
+	}
+	//class<Weapon>(InventoryType).Default.AIRating;
+	// WeaponType.default.InventoryGroup;
+	if(Item.IsA('AssaultAmmoPickup')) Linked.AmmoTaken[2] += AssaultAmmoPickup(Item).AmmoAmount;
+	else if(Item.IsA('LinkAmmoPickup')) Linked.AmmoTaken[5] += LinkAmmoPickup(Item).AmmoAmount;
+	else if(Item.IsA('ShockAmmoPickup')) Linked.AmmoTaken[4] += ShockAmmoPickup(Item).AmmoAmount;
+	Debug(Linked.AmmoTaken[2] @ Linked.AmmoTaken[4] @ Linked.AmmoTaken[5]);
+	//Debug(P.GetHumanReadableName() @ Item);*/

@@ -1,0 +1,23 @@
+class ModifyPawnMessage extends zLocalMessage;
+
+static function ClientReceive(PlayerController P, optional int N, optional PlayerReplicationInfo R1, optional PlayerReplicationInfo R2, optional Object O){
+	
+	local Skinner Skinner;
+	local MyInfo PawnInfo;
+
+	Debug("ModifyPawnMessage:" @ R1.GetHumanReadableName(), P);
+	
+	if(P.PlayerReplicationInfo == R1 || R1 == None) return;
+		
+	Skinner = Skinner(class'zInteraction'.static.LoadInteraction(P, 'Skinner'));
+	PawnInfo = class'MyInfo'.static.Get(R1);
+	
+	Debug("ModifyPawnMessage:" @ PawnInfo, P);
+	
+	Skinner.SpawnNotify(PawnInfo);
+}
+
+defaultproperties{
+}
+
+

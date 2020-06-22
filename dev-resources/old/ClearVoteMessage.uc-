@@ -1,0 +1,11 @@
+class ClearVoteMessage extends VoteMessage;
+
+static function float GetLifeTime(int N){
+	return 1;
+}
+
+defaultproperties{
+	Lifetime=1
+	bFadeMessage=True
+}
+

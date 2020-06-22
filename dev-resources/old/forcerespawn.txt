@@ -1,0 +1,33 @@
+/*function ForceRespawnPlayers(){
+	local byte i;
+	for(i = 0; i < DeadPlayers.Length; i++){
+		if(DeadPlayers[i].Player == None || !DeadPlayers[i].Player.IsInState('Dead')){ // ?eaie
+			DeadPlayers.Remove(i, 1); // i = i - 1;
+			return;
+		}
+		if(Level.TimeSeconds > DeadPlayers[i].RestartTime){
+			if(DeadPlayers[i].Player.CanRestartPlayer()) Level.Game.RestartPlayer(DeadPlayers[i].Player);
+			DeadPlayers.Remove(i, 1);
+			return;
+		}
+	}
+}
+function Tick(float DeltaTime){
+	if(Level.TimeSeconds < TimeTick) return;
+	TimeTick = Level.TimeSeconds + 0.5;
+	ForceRespawnPlayers();
+	if(DeadPlayers.Length == 0) Disable('Tick');
+}*/
+
+/*function PlayerDied(Controller C){
+	local zLinkedReplicationInfo LRI;
+	if(ForceRespawnTime != 0 && PlayerController(C) != None){
+		LRI = GameRules.GetLRI(C.PlayerReplicationInfo);
+		if(LRI == None) return;
+		LRI.RestartTime = Level.TimeSeconds + ForceRespawnTime;
+		LRI.Enable('Timer');
+		LRI.SetTimer(1.0, True);
+		//DeadPlayers[DeadPlayers.Length] = LRI;
+		//Enable('Tick');
+	}
+}*/

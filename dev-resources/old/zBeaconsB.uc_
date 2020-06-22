@@ -1,0 +1,148 @@
+class zBeaconsB extends Object within zLinkedReplicationInfoB; // extends Info ReplicationInfo
+/* тип локации: 1 - near pickup
+			2 - between p1 & p2
+лифты
+1. около LiftCenter есть всегда LiftExit
+todo: мутатор MutNoSuperWeapon заменяет супер оружие
+else if ( xWeaponBase(Other).WeaponType == class'Redeemer' )
+			xWeaponBase(Other).WeaponType = class'RocketLauncher';
+todo: добавить ближайший пикап 2 и если разница между ними 10 м и он в прямой видимости то используем его
+
+*/
+var() vector Coordinate[21];
+var() string ItemName[21];
+var() byte BeaconsCount;
+
+var array<vector> BeaconCoordinates;
+var array<string> BeaconItemNames;
+var array<string> TheBeaconItemNames;
+
+var zLinkedReplicationInfoB Linked;
+
+replication{
+	reliable if(bNetInitial && Role == Role_Authority) Coordinate, ItemName, BeaconsCount;
+}
+
+
+function InitB(){
+//	Linked = zLinkedReplicationInfoB(Outer);
+	ProcessPickups();
+	ProcessNavigationPoints();
+	ProcessBeacons();
+	End();
+	Log("Linked" @ Linked @ "Outer" @ Outer);
+}
+
+auto state StartUp{
+	Begin:
+	ProcessPickups();
+	ProcessNavigationPoints();
+	ProcessBeacons();
+	End();
+}
+function End(){
+	local byte i;
+	BeaconsCount = TheBeaconItemNames.Length;
+	for(i = 0; i < BeaconsCount; i++){
+		ItemName[i] = TheBeaconItemNames[i];
+		Coordinate[i] = BeaconCoordinates[i];
+	}
+	BeaconItemNames.Length = 0; // удаляем
+	BeaconCoordinates.Length = 0;
+	TheBeaconItemNames.Length = 0;
+	// checking
+	for(i = 0; i < BeaconsCount; i++){
+		Log(i @ ItemName[i] @ Coordinate[i]);
+	}
+}
+
+function vector GetCoordinate(byte i){
+	return Coordinate[i];
+}
+function string GetLocationItemName(byte i){
+	return ItemName[i];
+}
+
+function ProcessBeacons(){
+	local byte i, j;
+	local string NearestItem, Letter, ItemLetter;
+	for(i = 0; i < TheBeaconItemNames.Length; i++){
+		NearestItem = NearestBeacon(BeaconCoordinates[i]);
+		if(NearestItem == "") continue;
+		ItemLetter = Right(TheBeaconItemNames[i], 2);
+		for(j = 65; j < 90; j++){
+			Letter = " " $ Chr(j);
+			if(ItemLetter != Letter) continue;
+			TheBeaconItemNames[i] @= NearestItem;
+			break;
+		}
+	}
+}
+
+function string NearestBeacon(vector V){
+	local float MinDistance, Distance;
+	local byte i;
+	local string S;
+	MinDistance = 52.5 * 15; // + 5-10 m для lineofsight pickupa
+	for(i = 0; i < BeaconItemNames.Length; i++){
+		if(V == BeaconCoordinates[i]) continue;
+		Distance = VSize(V - BeaconCoordinates[i]);
+		if(Distance > MinDistance) continue;
+		MinDistance = Distance;
+		S = BeaconItemNames[i];
+	}
+	if(S != "") S = Repl("(%P)", "%P", S);
+	return S;
+}
+
+function ProcessNavigationPoints(){
+	local NavigationPoint N;
+	local string S;
+	for(N = Level.NavigationPointList; N != None; N = N.NextNavigationPoint){
+		if(N.IsA('Teleporter')) S = "Teleport";
+		else if(N.IsA('Door')) S = "Door";
+		else if(N.IsA('LiftCenter')) S = "Lift";
+		else if(N.IsA('JumpPad')) S = "Jump Pad";
+		else S = "";
+		if(S != "") SetBeacon(N.Location, S);
+	}
+}
+
+function ProcessPickups(){
+	local Pickup P;
+	local string S;
+	foreach DynamicActors(class'Pickup', P){
+		if(P.IsA('WeaponPickup')) S = P.GetHumanReadableName();
+		else if(P.IsA('UDamagePack')) S = "DOUBLE DAMAGE";
+		else if(P.IsA('ShieldPickup')) S = ShieldPickup(P).ShieldAmount @ "Shield";
+		else if(P.IsA('SuperHealthPack')) S = "Mega Health";
+		else continue;
+		SetBeacon(P.Location, S);
+	}
+}
+
+function SetBeacon(vector Coordinate, string S){
+	local byte i, j, Count;
+	local array<byte> Keys;
+	i = BeaconItemNames.Length;
+	BeaconCoordinates[i] = Coordinate;
+	BeaconItemNames[i] = S;
+	Count = CountStrings(S, BeaconItemNames, Keys);
+	if(Count == 1){ TheBeaconItemNames[i] = BeaconItemNames[i]; return;	}
+	for(j = 0; j < Keys.Length; j++){
+		TheBeaconItemNames[Keys[j]] = BeaconItemNames[Keys[j]] @ Chr(65 + j);
+	}
+}
+
+function byte CountStrings(string S, array<string> A, optional out array<byte> Keys){
+	local byte i, Count;
+	Keys.Length = 0;
+	for(i = 0; i < A.Length; i++){
+		if(S != A[i]) continue;
+		Keys[Keys.Length] = i;
+		Count++;
+	}
+	return Count;
+}
+
+defaultproperties{}

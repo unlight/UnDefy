@@ -1,0 +1,48 @@
+class BrightSkin extends Pawn;
+
+var ConstantColor myConstantColor;
+var Combiner myCombiner; 
+var FinalBlend myFinalBlend;     // material for the mesh skin
+var ColorModifier CM;
+var name OldAnimAction;
+
+//simulated function PreBeginPlay(){
+//	if(Owner == None) Destroy();
+//	SetCollision(False, False, False);
+//	SetDrawScale(xPawn(Owner).DrawScale);
+//	SetDrawScale3D(xPawn(Owner).DrawScale3D);
+//	LinkMesh(xPawn(Owner).Mesh, False);
+//	SetOverlayMaterial(Shader'UT2004Weapons.Shaders.ShockHitShader', 20, True);
+//	xPawn(Owner).Attach(Self);
+//}
+
+function PostBeginPlay(){
+	local int Channel;
+	local name Sequence;
+	local float frame, rate;
+	
+	if(Owner == None) return;
+	SetDrawScale(Owner.DrawScale);
+	SetDrawScale3D(Owner.DrawScale3D * 1.2);
+	LinkMesh(Owner.Mesh);
+	SetOverlayMaterial(Shader'UT2004Weapons.Shaders.ShockHitShader', 30, True);
+	SetBase(Owner);
+}
+
+function Tick(float T){
+//	if(xPawn(Owner).AnimAction != OldAnimAction) PlayAnim(xPawn(Owner).AnimAction);
+}
+
+defaultproperties{
+	bCollideActors=False
+	bStasis=False
+	bHardAttach=True
+     DrawType=DT_Mesh
+     RemoteRole=ROLE_None
+     LifeSpan=30
+     Mesh=SkeletalMesh'ThunderCrash.JakobM'
+     Texture=Texture'XEffects.RedMarker_t'
+     Skins(0)=Texture'DemoPlayerSkins.Jakob_Body'
+     Skins(1)=Texture'DemoPlayerSkins.Jakob_NewHead'
+     bOwnerNoSee=True
+}

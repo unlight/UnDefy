@@ -1,0 +1,100 @@
+class zTimeout extends Mutator CacheExempt;
+// todo: если тдм, то капитаны могут вызывать таймаут
+
+var(Timeout) int Players[2]; // ид игроков
+var(Timeout) int PlasyersTimeouts[2]; // сколько раз они вызывали таймаут
+var(Timeout) PlayerReplicationInfo Caller; // уставший от жизни анрилер
+var zMain MainMutator;
+var int TimeoutLength;
+var byte Timeouts;
+var int TimeLeft;
+
+event PostBeginPlay(){
+	MainMutator = zMain(Owner);
+	TimeoutLength = MainMutator.TimeoutLength;
+	Timeouts = MainMutator.Timeouts;
+}
+
+function Mutate(string MutateString, PlayerController PC){
+	local string Reason;
+	local int Index;
+	if(MutateString ~= "CallTimeOut"){
+		Reason = AllowCallTimeOut(PC, Index);
+	    if(Reason != ""){
+			PC.ClientMessage(Reason);
+			goto NextMutator;
+		}
+		PlasyersTimeouts[Index]++;
+		Caller = PC.PlayerReplicationInfo;
+		GotoState('Paused');
+	}else if(MutateString ~= "CallTimeIn"){
+		if(Caller != None && Caller == PC.PlayerReplicationInfo) GotoState('PreMatch');
+	}
+	NextMutator:
+	if(NextMutator != None) NextMutator.Mutate(MutateString, PC);
+}
+
+function string AllowCallTimeOut(PlayerController PC, out int Index){
+	Index = FindIndex(PC.PlayerReplicationInfo.PlayerID);
+	if(Level.Game.bTeamGame || Level.Game.MaxPlayers != 2 || (Level.Game.NumPlayers + Level.Game.NumBots) != 2) return "Timeout can be called only in duel!";
+	if(PC.IsSpectating()) return "Spectators can't call timeout!";
+	if(Level.Game.GameReplicationInfo.ElapsedTime == 0 || Level.Game.GameReplicationInfo.RemainingTime == 900) return "Can't call timeout during warmup!";
+	if(PlasyersTimeouts[Index] >= Timeouts) return "No more timeouts for you!";
+	if(Level.Pauser != None){
+		if(Level.Pauser == PC.PlayerReplicationInfo) return "Your timeout in progress!";
+		return "Match paused by" @ Level.Pauser.PlayerName $ "!";
+	}
+	if(MainMutator.WarmUp != None) return "Can't call timeout in warmup!";
+	if(!Level.Game.IsInState('MatchInProgress')) return "Can't call timeout right now!";
+	if(Level.Game.GameReplicationInfo.RemainingTime == 0 || Level.Game.TimeLimit == 0) return "Can't call timeout!";
+	return "";
+}
+
+function TimeOutEnd(){
+	Caller = None;
+	Level.Pauser = None;
+}
+
+state PreMatch{
+	function BeginState(){
+		TimeLeft = 5;
+		Level.Game.BroadcastLocalized(Self, class'TimeOutMessage', -1, Caller);
+	}
+	function Timer(){
+		Level.Game.BroadcastLocalized(Self, class'ResumeTimeMessage', TimeLeft);
+		TimeLeft = TimeLeft - 1;
+		if(TimeLeft <= -1) GotoState('');
+	}
+	function EndState(){
+		TimeOutEnd();
+	}
+}
+state Paused{
+	function BeginState(){
+		SetTimer(1, True);
+		Level.Game.BroadcastLocalized(Self, class'TimeOutMessage', -2, Caller);
+		TimeLeft = TimeoutLength;
+		Level.Pauser = Caller;
+	}
+	function Timer(){
+		Level.Game.BroadcastLocalized(Self, class'ResumeTimeMessage', TimeLeft);
+		TimeLeft = TimeLeft - 1;
+		if(TimeLeft <= -1){
+			TimeOutEnd();
+			GotoState('');
+		}
+	}
+}
+function int FindIndex(int Id){
+	if(Players[1] == Id) return 1;
+	return 0;
+}
+simulated function Debug(coerce string S){
+	class'zUtil'.static.Debug(S, Self);
+}
+
+defaultproperties{
+	bNetTemporary=True
+	RemoteRole=ROLE_None
+	bAlwaysTick=True
+}

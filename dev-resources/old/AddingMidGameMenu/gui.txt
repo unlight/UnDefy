@@ -1,0 +1,49 @@
+    Begin Object Class=GUITabControl Name=GUITabControl
+        bFillSpace=True
+        bDockPanels=True
+        TabHeight=0.037500
+        BackgroundStyleName="TabBackground"
+        Controls(0)=UT2K4Tab_PlayerLoginControls'Package.UT2K4Tab_PlayerLoginControls'
+
+        Controls(1)=UT2K4Tab_MidGameRulesCombo'Package.UT2K4Tab_MidGameRulesCombo'
+
+        Controls(2)=UT2K4Tab_MidGameHelp'Package.UT2K4Tab_MidGameHelp'
+
+        Controls(3)=TTM_Win_Tab_MidGame'Package.TTM_Win_Tab_MidGame'
+
+        Controls(4)=zMidGamePanelB'Package.zMidGamePanelB'
+
+        WinTop=0.059026
+        WinLeft=0.012500
+        WinWidth=0.974999
+        WinHeight=0.044644
+        bBoundToParent=True
+        bScaleToParent=True
+        bAcceptsInput=True
+        bInit=False
+        OnActivate=GUITabControl.InternalOnActivate
+        OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object
+--------------------- TABS HOLDER------------
+
+	Begin Object Class=GUITabControl Name=GUITabControl
+		bFillSpace=True
+		bDockPanels=True
+		TabHeight=0.037500
+		BackgroundStyleName="TabBackground"
+		Controls(0)=GUITabPanel'MyTabPanelA'
+		Controls(1)=UT2K4Tab_MidGameRulesCombo'Package.UT2K4Tab_MidGameRulesCombo'
+		Controls(2)=UT2K4Tab_MidGameHelp'Package.UT2K4Tab_MidGameHelp'
+		Controls(3)=TTM_Win_Tab_MidGame'Package.TTM_Win_Tab_MidGame'
+		Controls(4)=zMidGamePanelB'Package.zMidGamePanelB'
+		WinTop=0.059026
+		WinLeft=0.012500
+		WinWidth=0.974999
+		WinHeight=0.044644
+		bBoundToParent=True
+		bScaleToParent=True
+		bAcceptsInput=True
+		bInit=False
+		OnActivate=GUITabControl.InternalOnActivate
+		OnKeyEvent=GUITabControl.InternalOnKeyEvent
+    End Object

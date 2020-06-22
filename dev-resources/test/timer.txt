@@ -1,0 +1,81 @@
+/*exec function TimerPos(string X, string Y){
+	local HudCDeathMatch H;
+	local int i;
+	H = HudCDeathMatch(Me.MyHUD);
+	
+	H.TimerIcon.PosX = float(X);
+	H.TimerIcon.PosY = float(Y);
+	
+	for(i = 0; i < 2; i++) H.TimerDigitSpacer[i].PosX = float(X);
+	for(i = 0; i < 2; i++) H.TimerDigitSpacer[i].PosY = float(Y);
+	
+	H.TimerBackground.PosX = float(X);
+	H.TimerBackground.PosY = float(Y);
+	H.TimerBackgroundDisc.PosX = float(X);
+	H.TimerBackgroundDisc.PosY = float(Y);
+	
+	H.TimerHours.PosX = float(X);
+	H.TimerHours.PosY = float(Y);
+	
+	H.TimerMinutes.PosX = float(X);
+	H.TimerMinutes.PosY = float(Y);
+	
+	H.TimerSeconds.PosX = float(X);
+	H.TimerSeconds.PosY = float(Y);    
+}
+exec function TimerScaleMode(int Mode){
+	local HudCDeathMatch H;
+	local int i;
+	local HudBase.EScaleMode SM;
+	switch(Mode){
+		case 0: SM = SM_None; break;
+		case 1: SM = SM_Up; break;
+		case 2: SM = SM_Down; break;
+		case 3: SM = SM_Left; break;
+		case 4: SM = SM_Right; break;
+	}
+	Debug("TimerScaleMode" @ SM);
+	
+	H = HudCDeathMatch(Me.MyHUD);
+	H.TimerIcon.ScaleMode = SM;
+
+	for(i = 0; i < 2; i++) H.TimerDigitSpacer[i].ScaleMode = SM;
+	H.TimerBackground.ScaleMode = SM;
+	H.TimerBackgroundDisc.ScaleMode = SM;
+}
+exec function TimerAdrA(){
+	TimerAdr("TimerIcon", "-10", "80");
+	TimerAdr("TimerBackground", "-40", "112");
+	TimerAdr("TimerBackgroundDisc", "-2", "73");
+}
+exec function TimerAdr(string S,string X, string Y){
+	local HudCDeathMatch H;
+	H = HudCDeathMatch(Me.MyHUD);
+	
+	switch(S){
+		case "TimerIcon": H.TimerIcon.OffsetX = float(X); H.TimerIcon.OffsetY= float(Y); break;
+		case "TimerBackground": H.TimerBackground.OffsetX = float(X); H.TimerBackground.OffsetY= float(Y); break;
+		case "TimerBackgroundDisc": H.TimerBackgroundDisc.OffsetX = float(X); H.TimerBackgroundDisc.OffsetY= float(Y); break;
+		case "TimerSeconds": H.default.TimerSeconds.OffsetX = float(X); H.default.TimerSeconds.OffsetY= float(Y); break;
+		case "TimerMinutes": H.default.TimerMinutes.OffsetX = float(X); H.default.TimerMinutes.OffsetY= float(Y); break;
+	}
+
+	H.TimerIcon.PosX=1.0;
+	H.TimerIcon.PosY=0.0;
+	
+	H.TimerBackground.DrawPivot = DP_UpperRight;
+	H.TimerBackground.PosX=1.0;
+	H.TimerBackground.PosY=0.0;
+	
+	H.TimerBackgroundDisc.DrawPivot = DP_UpperRight;
+	H.TimerBackgroundDisc.PosX=1.0;
+	H.TimerBackgroundDisc.PosY=0.0;
+	
+	H.TimerSeconds.DrawPivot = DP_MiddleRight;
+	H.TimerSeconds.PosX=1.0;
+	H.TimerSeconds.PosY=0.0;
+	
+	H.TimerMinutes.DrawPivot = DP_MiddleRight;
+	H.TimerMinutes.PosX=1.0;
+	H.TimerMinutes.PosY=0.0;
+}
